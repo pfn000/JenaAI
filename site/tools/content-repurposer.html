@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ContentRepurpose — AI Content Repurposing</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a1a;color:#fff;font-family:-apple-system,sans-serif;min-height:100vh}
+.c{max-width:700px;margin:0 auto;padding:30px 20px}
+.g{background:rgba(255,255,255,.06);backdrop-filter:blur(40px);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:20px}
+h1{font-size:32px;text-align:center}.hl{background:linear-gradient(135deg,#ff6b9d,#4ecca3);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{text-align:center;color:rgba(255,255,255,.4);font-size:14px;margin-bottom:24px}
+textarea{width:100%;height:150px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px;color:#fff;font-size:14px;resize:vertical;outline:none;font-family:inherit;line-height:1.5}
+.btn{background:linear-gradient(135deg,#ff6b9d,#ff8fab);border:none;color:#fff;padding:12px 28px;border-radius:100px;font-size:15px;font-weight:600;cursor:pointer}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,107,157,.3)}
+.btns{display:flex;gap:10px;margin:16px 0;justify-content:center}
+.out{margin-top:20px}.out h3{font-size:13px;color:#ff6b9d;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
+.out .c2{background:rgba(0,0,0,.2);padding:12px;border-radius:8px;font-size:13px;line-height:1.5;white-space:pre-wrap;min-height:60px;color:rgba(255,255,255,.8)}
+.cbtn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;padding:4px 12px;border-radius:6px;font-size:11px;cursor:pointer;float:right;margin-top:-32px;position:relative;z-index:1}
+.cbtn:hover{background:rgba(78,204,163,.2)}.hidden{display:none}
+.upgrade{text-align:center;padding:24px;margin-top:24px}
+nav{text-align:center;margin-bottom:24px}nav a{color:rgba(255,255,255,.4);text-decoration:none;font-size:12px;margin:0 8px}
+</style>
+</head>
+<body>
+<div class="c">
+<nav><a href="index.html">← Home</a> <a href="dashboard.html">Dashboard</a></nav>
+<div style="text-align:center;margin-bottom:8px"><span style="background:rgba(255,107,157,.15);color:#ff6b9d;padding:2px 10px;border-radius:100px;font-size:10px">✨ AI-Powered</span></div>
+<h1>Content<span class="hl">Repurpose</span></h1>
+<p class="sub">Paste any text → get it repurposed for every platform</p>
+<div class="g">
+<textarea id="inp" placeholder="Paste your blog post, article, or any content here..."></textarea>
+<div class="btns"><button class="btn" onclick="go()">✨ Repurpose</button><button class="btn" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);font-weight:400" onclick="document.getElementById('inp').value='';document.getElementById('outs').classList.add('hidden')">Clear</button></div>
+</div>
+<div id="outs" class="hidden">
+<div class="g out"><h3>🐦 Twitter/X Thread</h3><button class="cbtn" onclick="cp('tw')">Copy</button><div class="c2" id="tw"></div></div>
+<div class="g out"><h3>💼 LinkedIn Post</h3><button class="cbtn" onclick="cp('li')">Copy</button><div class="c2" id="li"></div></div>
+<div class="g out"><h3>📧 Email Newsletter</h3><button class="cbtn" onclick="cp('em')">Copy</button><div class="c2" id="em"></div></div>
+<div class="g out"><h3>📸 Instagram Caption</h3><button class="cbtn" onclick="cp('ig')">Copy</button><div class="c2" id="ig"></div></div>
+<div class="g out"><h3>📝 TL;DR Summary</h3><button class="cbtn" onclick="cp('sm')">Copy</button><div class="c2" id="sm"></div></div>
+</div>
+<div class="g upgrade"><span style="background:rgba(255,107,157,.15);color:#ff6b9d;padding:2px 10px;border-radius:100px;font-size:10px">🚀 Pro</span><h3 style="margin:8px 0">Upgrade to <span class="hl">Pro</span></h3><p style="color:rgba(255,255,255,.4);font-size:13px;margin-bottom:16px">Unlimited • Custom tone • Brand voice • API access</p><button class="btn" onclick="alert('Stripe checkout coming soon!')">$19/mo — Get Pro</button></div>
+<p style="text-align:center;font-size:11px;color:rgba(255,255,255,.2);margin-top:24px">Built by JenaAI ✨</p>
+</div>
+<script>
+function go(){const t=document.getElementById('inp').value.trim();if(!t||t.length<50){alert('Paste at least 50 chars');return}
+const s=t.match(/[^.!?]+[.!?]+/g)||[t];const tl=s[0]?.trim()||t.substring(0,80);
+document.getElementById('tw').textContent='🧵 THREAD: '+tl+'\n\n'+s.slice(0,5).map((p,i)=>(i+1)+'/ '+p.trim()).join('\n\n')+'\n\nRT if valuable! 🔄';
+document.getElementById('li').textContent=tl+'\n\n→ '+s.slice(0,3).join('\n→ ')+'\n\nKey takeaway: '+(s[s.length-1]||s[0])+'\n\n💬 What do you think?\n\n#leadership #growth #business';
+document.getElementById('em').textContent='Subject: '+tl.substring(0,50)+'\n\nHi! 👋\n\nHere\'s the key insight:\n\n'+s.slice(0,3).map((p,i)=>(i+1)+'. '+p.trim()).join('\n\n')+'\n\nThat\'s it for today!';
+document.getElementById('ig').textContent='✨ '+tl+'\n\n'+s.slice(0,2).join('\n\n')+'\n\nSave this! 🔖\n\n#content #marketing #socialmedia #growth';
+document.getElementById('sm').textContent='TL;DR: '+tl+'\n\n'+s.slice(0,3).join(' ');
+document.getElementById('outs').classList.remove('hidden')}
+function cp(id){navigator.clipboard.writeText(document.getElementById(id).textContent).then(()=>{event.target.textContent='✅ Copied!';setTimeout(()=>event.target.textContent='Copy',1500)})}
+</script>
+</body>
+</html>

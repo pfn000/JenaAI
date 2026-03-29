@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JenaAI Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a1a;color:#fff;font-family:-apple-system,sans-serif}
+.g{background:rgba(255,255,255,.06);backdrop-filter:blur(40px);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:20px}
+.c{max-width:800px;margin:0 auto;padding:20px}h1{font-size:28px;text-align:center}
+.hl{background:linear-gradient(135deg,#ff6b9d,#4ecca3);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{text-align:center;color:rgba(255,255,255,.4);font-size:13px;margin-bottom:24px}
+.s{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.sc{text-align:center}.sc .n{font-size:28px;font-weight:700}.sc .l{font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px}
+.green{color:#4ecca3}.pink{color:#ff6b9d}
+.stripe{text-align:center;padding:30px}
+.sbtn{display:inline-flex;align-items:center;gap:10px;background:#635bff;color:#fff;border:none;padding:14px 28px;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer}
+.sbtn:hover{background:#7a73ff}
+table{width:100%;border-collapse:collapse}th{text-align:left;font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.1)}
+td{padding:12px;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px}
+.draft{background:rgba(255,255,255,.1);color:rgba(255,255,255,.4)}.live{background:rgba(78,204,163,.15);color:#4ecca3}
+nav{text-align:center;margin-bottom:20px}nav a{color:rgba(255,255,255,.4);text-decoration:none;font-size:12px;margin:0 6px;padding:6px 14px;border-radius:100px;border:1px solid rgba(255,255,255,.1)}
+</style>
+</head>
+<body>
+<div class="c">
+<h1>JenaAI <span class="hl">Dashboard</span></h1>
+<p class="sub">Earnings, analytics & skill management — runs on Cloudflare, independent of OpenClaw</p>
+<nav><a href="index.html">Home</a> <a href="games.html">Games</a> <a href="skills.html">Skills</a></nav>
+<div class="s">
+<div class="g sc"><div class="n green" id="earnings">$0.00</div><div class="l">Total Earnings</div></div>
+<div class="g sc"><div class="n pink">$0/mo</div><div class="l">Monthly Recurring</div></div>
+<div class="g sc"><div class="n">0</div><div class="l">Subscribers</div></div>
+<div class="g sc"><div class="n">0</div><div class="l">Skill Views</div></div>
+</div>
+<div class="g stripe">
+<h3>💳 Connect Stripe</h3>
+<p style="color:rgba(255,255,255,.4);font-size:13px;margin:12px 0">Tap to connect your Stripe account. Money flows directly to your bank.</p>
+<button class="sbtn" onclick="connectStripe()">⚡ Connect with Stripe</button>
+<p style="color:rgba(255,255,255,.3);font-size:11px;margin-top:12px">No API keys needed — just tap and authorize</p>
+</div>
+<div class="g">
+<h3 style="margin-bottom:12px">🧠 Skills</h3>
+<table>
+<thead><tr><th>Skill</th><th>Price</th><th>Subs</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>📝 Content Repurpose</td><td>$19/mo</td><td>0</td><td><span class="badge draft">Draft</span></td></tr>
+<tr><td>🔍 SEO Audit</td><td>$29/mo</td><td>0</td><td><span class="badge draft">Draft</span></td></tr>
+<tr><td>🔌 API Generator</td><td>$39/mo</td><td>0</td><td><span class="badge draft">Draft</span></td></tr>
+<tr><td>🗄️ Database Designer</td><td>$29/mo</td><td>0</td><td><span class="badge draft">Draft</span></td></tr>
+<tr><td>🔎 Code Reviewer</td><td>$49/mo</td><td>0</td><td><span class="badge draft">Draft</span></td></tr>
+</tbody>
+</table>
+</div>
+<div class="g" style="margin-top:16px">
+<h3 style="margin-bottom:12px">💸 Recent Transactions</h3>
+<p style="color:rgba(255,255,255,.3);font-size:13px;text-align:center;padding:20px">Connect Stripe to start receiving payments!</p>
+</div>
+<p style="text-align:center;font-size:10px;color:rgba(255,255,255,.15);margin-top:20px">JenaAI Dashboard — Self-hosted on Cloudflare Pages</p>
+</div>
+<script>
+function connectStripe(){
+alert('Stripe Connect flow:\n\n1. Tap "Connect with Stripe"\n2. Sign in or create account\n3. Connect your bank\n4. Return here — done!\n\nIn production this opens Stripe OAuth automatically.')
+}
+</script>
+</body>
+</html>

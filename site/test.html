@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JenaAI Test</title>
+    <style>
+        body { background: #0a0a1a; color: white; font-family: -apple-system, sans-serif; padding: 20px; }
+        div { padding: 8px; margin: 4px 0; border-radius: 8px; font-size: 13px; }
+        .ok { background: rgba(78,204,163,0.1); border-left: 3px solid #4ecca3; }
+        .fail { background: rgba(233,69,96,0.1); border-left: 3px solid #e94560; }
+        .load { background: rgba(255,255,255,0.05); border-left: 3px solid #ffa500; }
+        #viewer { width: 100%; height: 300px; margin: 16px 0; background: #1a1a2e; border-radius: 12px; }
+        canvas { width: 100% !important; height: 100% !important; }
+    </style>
+</head>
+<body>
+    <h2>🔍 JenaAI Script Test</h2>
+    <div id="log"></div>
+    <div id="viewer"></div>
+    
+    <script>
+        const log = document.getElementById('log');
+        function add(text, type) {
+            log.innerHTML += '<div class="' + type + '">' + text + '</div>';
+        }
+        
+        // Load scripts sequentially
+        function loadScript(url, name) {
+            return new Promise((resolve, reject) => {
+                add('⏳ Loading ' + name + ' from ' + url + '...', 'load');
+                const s = document.createElement('script');
+                s.src = url;
+                s.onload = () => {
+                    add('✅ ' + name + ' loaded!', 'ok');
+                    resolve();
+                };
+                s.onerror = (e) => {
+                    add('❌ ' + name + ' FAILED from ' + url, 'fail');
+                    reject(new Error(name + ' failed'));
+                };
+                document.head.appendChild(s);
+            });
+        }
+        
+        async function test() {
+            try {
+                await loadScript('vendor/three.min.js', 'Three.js');
+                add('THREE exists: ' + (typeof THREE !== 'undefined'), typeof THREE !== 'undefined' ? 'ok' : 'fail');
+                add('THREE.REVISION: ' + (typeof THREE !== 'undefined' ? THREE.REVISION : 'N/A'), 'ok');
+                
+                await loadScript('vendor/OrbitControls.js', 'OrbitControls');
+                add('THREE.OrbitControls: ' + (THREE.OrbitControls ? 'YES' : 'NO'), THREE.OrbitControls ? 'ok' : 'fail');
+                
+                await loadScript('vendor/GLTFLoader.js', 'GLTFLoader');
+                add('THREE.GLTFLoader: ' + (THREE.GLTFLoader ? 'YES' : 'NO'), THREE.GLTFLoader ? 'ok' : 'fail');
+                
+                await loadScript('vendor/three-vrm.js', 'VRM Plugin');
+                add('THREE.VRMLoaderPlugin: ' + (THREE.VRMLoaderPlugin ? 'YES' : 'NO'), THREE.VRMLoaderPlugin ? 'ok' : 'fail');
+                
+                // Test WebGL
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                add('WebGL: ' + (gl ? 'YES ✅' : 'NO ❌'), gl ? 'ok' : 'fail');
+                
+                if (gl) {
+                    add('WebGL Vendor: ' + gl.getParameter(gl.VENDOR), 'ok');
+                    add('WebGL Renderer: ' + gl.getParameter(gl.RENDERER), 'ok');
+                }
+                
+                // Test VRM loading
+                add('⏳ Loading VRM model (avatars/seed-san.vrm)...', 'load');
+                const container = document.getElementById('viewer');
+                const renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                container.appendChild(renderer.domElement);
+                
+                const w = container.clientWidth, h = container.clientHeight || 300;
+                renderer.setSize(w, h);
+                
+                const camera = new THREE.PerspectiveCamera(30, w/h, 0.1, 20);
+                camera.position.set(0, 1, 3.5);
+                
+                const scene = new THREE.Scene();
+                scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+                scene.add(new THREE.DirectionalLight(0xffffff, 1).translateY(2));
+                
+                const loader = new THREE.GLTFLoader();
+                loader.register((p) => new THREE.VRMLoaderPlugin(p));
+                
+                loader.load('avatars/seed-san.vrm', (gltf) => {
+                    const vrm = gltf.userData.vrm;
+                    add('✅ VRM LOADED! Meta: ' + JSON.stringify(vrm.meta?.meta?.title || 'unknown'), 'ok');
+                    vrm.scene.rotation.y = Math.PI;
+                    scene.add(vrm.scene);
+                    
+                    function animate() {
+                        requestAnimationFrame(animate);
+                        renderer.render(scene, camera);
+                    }
+                    animate();
+                    add('🎭 AVATAR RENDERING!', 'ok');
+                }, (p) => {
+                    const pct = (100 * p.loaded / p.total).toFixed(0);
+                    add('📥 Downloading: ' + pct + '% (' + (p.loaded/1048576).toFixed(1) + '/' + (p.total/1048576).toFixed(1) + ' MB)', 'load');
+                }, (err) => {
+                    add('❌ VRM LOAD ERROR: ' + err.message, 'fail');
+                });
+                
+            } catch(e) {
+                add('❌ FATAL: ' + e.message, 'fail');
+            }
+        }
+        
+        test();
+    </script>
+</body>
+</html>

@@ -273,7 +273,14 @@
     function showPage(id) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById('page-' + id)?.classList.add('active');
-        if (id === 'call') startTimer();
+        if (id === 'call') {
+            startTimer();
+            // Init avatar NOW (when viewer is visible and has dimensions)
+            if (!window.avatar && typeof VRMEngine !== 'undefined') {
+                document.getElementById('status').textContent = 'Loading avatar...';
+                window.avatar = new VRMEngine('viewer');
+            }
+        }
     }
     
     let timerStart = null;

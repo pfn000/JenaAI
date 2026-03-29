@@ -313,4 +313,4 @@ class VRMEngine {
     }
 }
 
-// VRMEngine exported as ES module
+window.VRMEngine = VRMEngine;

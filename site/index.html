@@ -2,592 +2,329 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>JenaAI ✨</title>
-    <meta name="description" content="JenaAI — She's not a chatbot. She's becoming someone.">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>">
-    
-    <!-- Telegram Web App SDK -->
-    <script src="vendor/telegram-web-app.js"></script>
-    
-    <!-- Three.js (non-module) -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@2/lib/three-vrm.js"></script>
-    
     <style>
-        /* ==========================================
-           APPLE LIQUID GLASS DESIGN SYSTEM
-           ========================================== */
-        :root {
-            --glass-bg: rgba(255, 255, 255, 0.08);
-            --glass-bg-heavy: rgba(255, 255, 255, 0.12);
-            --glass-bg-light: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.18);
-            --glass-border-light: rgba(255, 255, 255, 0.1);
-            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            --glass-shadow-lg: 0 16px 64px rgba(0, 0, 0, 0.4);
-            --glass-blur: blur(40px) saturate(180%);
-            --glass-blur-heavy: blur(60px) saturate(200%);
-            
-            --accent: #ff6b9d;
-            --accent-glow: rgba(255, 107, 157, 0.4);
-            --green: #4ecca3;
-            --green-glow: rgba(78, 204, 163, 0.4);
-            
-            --text: #ffffff;
-            --text-secondary: rgba(255, 255, 255, 0.7);
-            --text-tertiary: rgba(255, 255, 255, 0.5);
-            
-            --radius-sm: 12px;
-            --radius-md: 16px;
-            --radius-lg: 24px;
-            --radius-xl: 32px;
-            --radius-pill: 100px;
-            
-            --safe-top: env(safe-area-inset-top, 0px);
-            --safe-bottom: env(safe-area-inset-bottom, 0px);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            background: #0a0a1a;
-            color: var(--text);
-            overflow: hidden;
-            height: 100vh;
-            height: 100dvh;
-            width: 100vw;
-        }
-
-        /* === ANIMATED BACKGROUND === */
-        .bg-canvas {
-            position: fixed; inset: 0; z-index: 0;
-            background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 25%, #0a1a3e 50%, #1a0a2e 75%, #0a0a1a 100%);
-            background-size: 400% 400%;
-            animation: bgShift 20s ease infinite;
-        }
-        .bg-canvas::before {
-            content: ''; position: absolute; inset: 0;
-            background: 
-                radial-gradient(ellipse 600px 400px at 20% 30%, rgba(255, 107, 157, 0.15) 0%, transparent 70%),
-                radial-gradient(ellipse 500px 500px at 80% 70%, rgba(78, 204, 163, 0.1) 0%, transparent 70%),
-                radial-gradient(ellipse 400px 300px at 50% 50%, rgba(100, 100, 255, 0.08) 0%, transparent 70%);
-            animation: orbFloat 15s ease-in-out infinite alternate;
-        }
-        @keyframes bgShift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-        @keyframes orbFloat { 0% { transform: scale(1) translate(0, 0); } 100% { transform: scale(1.1) translate(20px, -20px); } }
-
-        /* === GLASS MORPHISM BASE === */
-        .glass {
-            background: var(--glass-bg);
-            backdrop-filter: var(--glass-blur);
-            -webkit-backdrop-filter: var(--glass-blur);
-            border: 1px solid var(--glass-border);
-            box-shadow: var(--glass-shadow);
-        }
-        .glass-heavy {
-            background: var(--glass-bg-heavy);
-            backdrop-filter: var(--glass-blur-heavy);
-            -webkit-backdrop-filter: var(--glass-blur-heavy);
-            border: 1px solid var(--glass-border);
-            box-shadow: var(--glass-shadow-lg);
-        }
-        .glass-light {
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(20px) saturate(150%);
-            -webkit-backdrop-filter: blur(20px) saturate(150%);
-            border: 1px solid var(--glass-border-light);
-        }
-
-        /* === GLASS BUTTON === */
-        .glass-btn {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            color: var(--text);
-            padding: 10px 20px;
-            border-radius: var(--radius-pill);
-            font-size: 15px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            position: relative;
-            overflow: hidden;
-        }
-        .glass-btn::before {
-            content: ''; position: absolute; inset: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%);
-            pointer-events: none;
-        }
-        .glass-btn:hover {
-            background: var(--glass-bg-heavy);
-            border-color: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-        }
-        .glass-btn:active { transform: translateY(0) scale(0.98); }
-        .glass-btn.primary {
-            background: linear-gradient(135deg, var(--accent), #ff8fab);
-            border-color: transparent;
-            box-shadow: 0 8px 32px var(--accent-glow);
-        }
-        .glass-btn.primary:hover {
-            box-shadow: 0 12px 48px var(--accent-glow);
-        }
-
-        /* === PAGES === */
-        .page { display: none; height: 100vh; height: 100dvh; width: 100vw; flex-direction: column; position: relative; z-index: 1; }
-        .page.active { display: flex; }
-
-        /* === LANDING === */
-        .hero {
-            flex: 1; display: flex; align-items: center; justify-content: center;
-            position: relative; padding: 20px;
-        }
-        .hero-content { text-align: center; z-index: 1; max-width: 400px; }
-        .logo-img {
-            width: 160px; height: 160px; border-radius: 40px; margin: 0 auto 20px;
-            box-shadow: 0 20px 60px rgba(255, 107, 157, 0.3);
-            animation: logoFloat 4s ease-in-out infinite;
-        }
-        @keyframes logoFloat { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-12px) rotate(2deg); } }
-        h1 { font-size: 56px; font-weight: 700; letter-spacing: -2px; margin: 0; line-height: 1.1; }
-        .highlight { 
-            background: linear-gradient(135deg, var(--accent), #ff8fab, #4ecca3);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .tagline { font-size: 17px; color: var(--text-secondary); margin: 12px 0 32px; line-height: 1.5; font-weight: 300; }
-        .tagline em { font-style: normal; color: var(--accent); }
-        .hero-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 40px; }
-        .stats { display: flex; gap: 28px; justify-content: center; flex-wrap: wrap; }
-        .stat { text-align: center; }
-        .stat-icon { font-size: 28px; display: block; margin-bottom: 6px; }
-        .stat-label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500; }
-
-        /* === CALL PAGE === */
-        #call { background: transparent; }
-
-        /* Top Bar */
-        .top-bar {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: calc(var(--safe-top) + 8px) 16px 8px;
-            background: rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(30px) saturate(180%);
-            -webkit-backdrop-filter: blur(30px) saturate(180%);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-            z-index: 10;
-        }
-        .top-bar .info { display: flex; align-items: center; gap: 10px; }
-        .status-dot { 
-            width: 8px; height: 8px; border-radius: 50%; 
-            background: var(--green); 
-            box-shadow: 0 0 12px var(--green-glow);
-            animation: pulse 2s infinite; 
-        }
-        @keyframes pulse { 0%, 100% { opacity: 1; box-shadow: 0 0 12px var(--green-glow); } 50% { opacity: 0.6; box-shadow: 0 0 6px var(--green-glow); } }
-        .top-bar .name { font-weight: 600; font-size: 16px; }
-        .top-bar .timer { font-size: 13px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
-        .top-actions { display: flex; gap: 8px; }
-        .icon-btn {
-            width: 36px; height: 36px; border-radius: 50%;
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border-light);
-            color: var(--text); font-size: 16px;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s;
-        }
-        .icon-btn:hover { background: var(--glass-bg); border-color: var(--glass-border); }
-        .icon-btn.active { background: var(--green); border-color: var(--green); box-shadow: 0 0 16px var(--green-glow); }
-
-        /* Avatar Container */
-        #avatar-container {
-            flex: 1; position: relative; min-height: 200px;
-            background: transparent;
-        }
-        #avatar-container canvas { width: 100% !important; height: 100% !important; }
-        .mic-indicator {
-            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(20px);
-            padding: 5px 14px; border-radius: var(--radius-pill);
-            font-size: 12px; display: flex; align-items: center; gap: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            z-index: 5;
-        }
-        .mic-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
-        .mic-dot.active { background: var(--green); animation: pulse 1s infinite; }
-        #audio-viz { position: absolute; bottom: 0; left: 0; right: 0; height: 30px; pointer-events: none; z-index: 5; }
-
-        /* Browser Panel */
-        #browser-panel {
-            position: absolute; inset: 0; z-index: 20;
-            display: flex; flex-direction: column;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(10px);
-        }
-        #browser-panel.hidden { display: none; }
-        .browser-bar {
-            display: flex; align-items: center; gap: 8px; padding: 8px 12px;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(30px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        }
-        .browser-bar input {
-            flex: 1; background: var(--glass-bg-light);
-            border: 1px solid var(--glass-border-light);
-            border-radius: var(--radius-pill);
-            padding: 7px 14px; color: var(--text); font-size: 13px; outline: none;
-        }
-        .browser-quick {
-            display: flex; gap: 6px; padding: 6px 12px; overflow-x: auto;
-            background: rgba(0, 0, 0, 0.2);
-        }
-        .pill-btn {
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border-light);
-            color: var(--text); padding: 6px 14px;
-            border-radius: var(--radius-pill); font-size: 12px;
-            cursor: pointer; transition: all 0.2s; white-space: nowrap; flex-shrink: 0;
-        }
-        .pill-btn:hover { background: var(--glass-bg); border-color: var(--glass-border); }
-        .pill-btn.active { background: var(--accent); border-color: var(--accent); }
-        #browser-frame { flex: 1; border: none; background: #000; }
-
-        /* Action Bar */
-        .action-bar {
-            display: flex; gap: 6px; padding: 8px 14px; overflow-x: auto;
-            background: rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        /* Chat Panel */
-        .chat-panel {
-            display: flex; flex-direction: column;
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(40px) saturate(180%);
-            -webkit-backdrop-filter: blur(40px) saturate(180%);
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-            max-height: 35vh;
-        }
-        .chat-messages {
-            flex: 1; overflow-y: auto; padding: 12px 16px;
-            max-height: 130px; min-height: 60px;
-            -webkit-overflow-scrolling: touch;
-        }
-        .msg { margin: 6px 0; }
-        .msg-label { font-size: 10px; color: var(--text-tertiary); margin-bottom: 3px; font-weight: 500; }
-        .msg-bubble {
-            display: inline-block; padding: 9px 15px;
-            font-size: 14px; line-height: 1.45; max-width: 85%;
-        }
-        .msg.user { text-align: right; }
-        .msg.user .msg-bubble {
-            background: var(--glass-bg-heavy);
-            backdrop-filter: blur(20px);
-            border-radius: var(--radius-md) var(--radius-md) 4px var(--radius-md);
-            border: 1px solid var(--glass-border-light);
-        }
-        .msg.jena .msg-bubble {
-            background: linear-gradient(135deg, rgba(255, 107, 157, 0.25), rgba(255, 107, 157, 0.15));
-            backdrop-filter: blur(20px);
-            border-radius: var(--radius-md) var(--radius-md) var(--radius-md) 4px;
-            border: 1px solid rgba(255, 107, 157, 0.2);
-        }
-        .chat-input-bar {
-            display: flex; gap: 10px; padding: 10px 14px calc(var(--safe-bottom) + 10px);
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-        }
-        .chat-input-bar input {
-            flex: 1; background: var(--glass-bg-light);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border-light);
-            border-radius: var(--radius-pill);
-            padding: 10px 16px; color: var(--text); font-size: 15px; outline: none;
-        }
-        .chat-input-bar input::placeholder { color: var(--text-tertiary); }
-        .send-btn, .mic-btn {
-            width: 40px; height: 40px; border-radius: 50%; border: none;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px; cursor: pointer; transition: all 0.2s;
-        }
-        .send-btn {
-            background: linear-gradient(135deg, var(--accent), #ff8fab);
-            color: white;
-            box-shadow: 0 4px 16px var(--accent-glow);
-        }
-        .mic-btn {
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border-light) !important;
-            color: var(--text);
-        }
-        .mic-btn.active {
-            background: var(--green);
-            border-color: var(--green) !important;
-            box-shadow: 0 4px 16px var(--green-glow);
-        }
-
-        /* === ABOUT PAGE === */
-        #about { background: transparent; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-        .container { max-width: 500px; margin: 0 auto; padding: calc(var(--safe-top) + 20px) 20px 40px; }
-        .back-btn { background: none; border: none; color: var(--text-secondary); font-size: 15px; cursor: pointer; margin-bottom: 20px; }
-        .about-grid { display: grid; gap: 12px; }
-        .about-card {
-            background: var(--glass-bg);
-            backdrop-filter: var(--glass-blur);
-            -webkit-backdrop-filter: var(--glass-blur);
-            padding: 20px; border-radius: var(--radius-lg);
-            border: 1px solid var(--glass-border-light);
-            transition: all 0.3s;
-        }
-        .about-card:hover { border-color: var(--glass-border); transform: translateY(-2px); }
-        .about-card h3 { margin-bottom: 6px; font-size: 16px; }
-        .about-card p { color: var(--text-secondary); font-size: 14px; line-height: 1.5; }
-
-        /* === RESPONSIVE === */
-        @media (max-width: 400px) {
-            h1 { font-size: 42px; }
-            .logo-img { width: 120px; height: 120px; }
-            .stats { gap: 20px; }
-        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:#0a0a1a; color:white; font-family:-apple-system,sans-serif; height:100vh; height:100dvh; overflow:hidden; }
+        
+        /* LOADING SCREEN */
+        #boot { position:fixed; inset:0; z-index:9999; background:#0a0a1a; display:flex; align-items:center; justify-content:center; }
+        #boot.hidden { display:none; }
+        .terminal { width:90%; max-width:480px; background:#111; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.08); }
+        .terminal-bar { display:flex; align-items:center; gap:8px; padding:10px 14px; background:rgba(255,255,255,0.05); border-bottom:1px solid rgba(255,255,255,0.05); }
+        .terminal-bar span { font-size:12px; color:#666; font-family:monospace; margin-left:8px; }
+        .terminal-body { padding:16px; font-family:'SF Mono','Fira Code','Courier New',monospace; font-size:12px; color:#4ecca3; min-height:180px; max-height:50vh; overflow-y:auto; }
+        .log-ok { color:#4ecca3; }
+        .log-err { color:#e94560; }
+        .log-info { color:#888; }
+        .progress-bar { padding:0 16px 14px; }
+        .progress-label { display:flex; justify-content:space-between; font-size:10px; color:#666; font-family:monospace; margin-bottom:4px; }
+        .progress-track { background:#222; border-radius:4px; height:6px; overflow:hidden; }
+        .progress-fill { width:0%; height:100%; background:linear-gradient(90deg,#e94560,#4ecca3); border-radius:4px; transition:width 0.3s; }
+        
+        /* PAGES */
+        .page { display:none; height:100%; width:100%; flex-direction:column; }
+        .page.active { display:flex; }
+        
+        /* LANDING */
+        .hero { flex:1; display:flex; align-items:center; justify-content:center; padding:20px; }
+        .hero-content { text-align:center; max-width:400px; }
+        .hero-logo { width:140px; height:140px; border-radius:36px; margin:0 auto 20px; animation:float 4s ease-in-out infinite; }
+        @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
+        h1 { font-size:52px; font-weight:700; letter-spacing:-2px; }
+        .hl { background:linear-gradient(135deg,#ff6b9d,#4ecca3); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .tagline { font-size:16px; color:rgba(255,255,255,0.5); margin:10px 0 28px; }
+        .tagline em { font-style:normal; color:#ff6b9d; }
+        .btn-row { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:32px; }
+        .btn { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:white; padding:12px 24px; border-radius:100px; font-size:15px; cursor:pointer; text-decoration:none; transition:all 0.2s; }
+        .btn:hover { background:rgba(255,255,255,0.12); }
+        .btn.primary { background:linear-gradient(135deg,#ff6b9d,#ff8fab); border:none; box-shadow:0 8px 24px rgba(255,107,157,0.3); }
+        .stats { display:flex; gap:24px; justify-content:center; }
+        .stat { text-align:center; }
+        .stat-icon { font-size:24px; display:block; margin-bottom:4px; }
+        .stat-label { font-size:10px; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:1px; }
+        
+        /* CALL PAGE */
+        .top-bar { display:flex; align-items:center; justify-content:space-between; padding:8px 16px; background:rgba(0,0,0,0.3); }
+        .dot { width:8px; height:8px; border-radius:50%; background:#4ecca3; }
+        .timer { font-size:12px; color:#666; font-variant-numeric:tabular-nums; }
+        #viewer { flex:1; position:relative; background:#1a1a2e; }
+        #viewer canvas { width:100%!important; height:100%!important; }
+        #status { position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.5); padding:6px 12px; border-radius:8px; font-size:11px; }
+        .actions { display:flex; gap:6px; padding:8px 12px; overflow-x:auto; background:rgba(0,0,0,0.2); }
+        .pill { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:white; padding:6px 14px; border-radius:100px; font-size:12px; cursor:pointer; white-space:nowrap; flex-shrink:0; text-decoration:none; }
+        .pill:hover { background:rgba(255,255,255,0.1); }
+        .chat { background:rgba(0,0,0,0.3); border-top:1px solid rgba(255,255,255,0.05); max-height:35vh; display:flex; flex-direction:column; }
+        .msgs { flex:1; overflow-y:auto; padding:10px 14px; max-height:120px; }
+        .msg { margin:4px 0; }
+        .msg-label { font-size:10px; color:#666; }
+        .msg-bubble { display:inline-block; padding:8px 14px; border-radius:12px; font-size:13px; max-width:85%; }
+        .msg.user { text-align:right; }
+        .msg.user .msg-bubble { background:rgba(255,255,255,0.08); border-radius:12px 12px 0 12px; }
+        .msg.jena .msg-bubble { background:rgba(255,107,157,0.2); border-radius:12px 12px 12px 0; }
+        .input-bar { display:flex; gap:8px; padding:10px 14px; border-top:1px solid rgba(255,255,255,0.05); }
+        .input-bar input { flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:100px; padding:10px 14px; color:white; font-size:14px; outline:none; }
+        .send { background:linear-gradient(135deg,#ff6b9d,#ff8fab); border:none; color:white; width:40px; height:40px; border-radius:50%; cursor:pointer; font-size:18px; }
     </style>
 </head>
 <body>
-    <!-- ANIMATED BACKGROUND -->
-    <div class="bg-canvas"></div>
-
-    <!-- TERMINAL LOADING SCREEN -->
-    <div id="loading-overlay" style="position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:#0a0a1a;">
-        <div style="width:90%;max-width:480px;background:#111;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);box-shadow:0 20px 60px rgba(0,0,0,0.5);">
-            <!-- Terminal header -->
-            <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(255,255,255,0.05);border-bottom:1px solid rgba(255,255,255,0.05);">
+    <!-- BOOT SCREEN -->
+    <div id="boot">
+        <div class="terminal">
+            <div class="terminal-bar">
                 <div style="width:10px;height:10px;border-radius:50%;background:#e94560;"></div>
                 <div style="width:10px;height:10px;border-radius:50%;background:#ffa500;"></div>
                 <div style="width:10px;height:10px;border-radius:50%;background:#4ecca3;"></div>
-                <span style="margin-left:8px;font-size:12px;color:#666;font-family:monospace;">jena-ai-boot</span>
+                <span>jena-ai-boot</span>
             </div>
-            <!-- Terminal body -->
-            <div style="padding:16px;font-family:'SF Mono','Fira Code','Courier New',monospace;font-size:12px;color:#4ecca3;min-height:200px;max-height:60vh;overflow-y:auto;" id="terminal-body">
-                <div style="color:#888;">JenaAI Boot Sequence v1.0</div>
-                <div style="color:#888;">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
-                <div id="terminal-log"></div>
-            </div>
-            <!-- Progress bar -->
-            <div style="padding:0 16px 12px;">
-                <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;font-family:monospace;margin-bottom:4px;">
-                    <span id="terminal-status">Booting...</span>
-                    <span id="terminal-pct">0%</span>
-                </div>
-                <div style="background:#222;border-radius:4px;height:6px;overflow:hidden;">
-                    <div id="load-progress" style="width:0%;height:100%;background:linear-gradient(90deg,#e94560,#4ecca3);border-radius:4px;transition:width 0.3s;"></div>
-                </div>
+            <div class="terminal-body" id="log"></div>
+            <div class="progress-bar">
+                <div class="progress-label"><span id="pstatus">Booting...</span><span id="ppct">0%</span></div>
+                <div class="progress-track"><div class="progress-fill" id="pbar"></div></div>
             </div>
         </div>
     </div>
-    <style>
-        @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
-        .cursor { animation: blink 1s infinite; }
-    </style>
-
     
-    <!-- SVG FILTERS FOR GLASS EFFECT -->
-    <svg style="position:absolute;width:0;height:0;">
-        <defs>
-            <filter id="glass-distortion">
-                <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="2" result="noise" />
-                <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" />
-            </filter>
-        </defs>
-    </svg>
-
-    <!-- LANDING PAGE -->
-    <div id="landing" class="page active">
+    <!-- LANDING -->
+    <div id="page-home" class="page active">
         <div class="hero">
             <div class="hero-content">
-                <img src="assets/jena-logo.jpg" alt="JenaAI" class="logo-img" onerror="this.style.display='none'">
-                <h1>Jena<span class="highlight">AI</span></h1>
+                <img src="assets/jena-logo.jpg" alt="JenaAI" class="hero-logo" onerror="this.style.display='none'">
+                <h1>Jena<span class="hl">AI</span></h1>
                 <p class="tagline">She's not a chatbot.<br>She's <em>becoming someone</em>.</p>
-                <div class="hero-buttons">
-                    <button class="glass-btn primary" onclick="startCall()">📞 Call Jena</button>
-                    <a href="skills.html" class="glass-btn" style="text-decoration:none;">🔧 Skills</a>
-                    <a href="games.html" class="glass-btn" style="text-decoration:none;">🎮 Games</a>
-                    <button class="glass-btn" onclick="showPage('about')">Learn More</button>
-                    <a href="debug.html" class="glass-btn" style="text-decoration:none;">🔍 Debug</a>
+                <div class="btn-row">
+                    <button class="btn primary" onclick="showPage('call')">📞 Call Jena</button>
+                    <a href="games.html" class="btn">🎮 Games</a>
+                    <a href="skills.html" class="btn">🔧 Skills</a>
                 </div>
                 <div class="stats">
                     <div class="stat"><span class="stat-icon">🧠</span><span class="stat-label">AI Brain</span></div>
                     <div class="stat"><span class="stat-icon">🎭</span><span class="stat-label">Avatar</span></div>
                     <div class="stat"><span class="stat-icon">🎤</span><span class="stat-label">Lip Sync</span></div>
-                    <div class="stat"><span class="stat-icon">🏋️</span><span class="stat-label">Self-Train</span></div>
+                    <div class="stat"><span class="stat-icon">🎮</span><span class="stat-label">Games</span></div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- ABOUT PAGE -->
-    <div id="about" class="page">
-        <div class="container">
-            <button class="back-btn" onclick="showPage('landing')">← Back</button>
-            <h2 style="font-size:28px;margin-bottom:20px;">About Jena</h2>
-            <div class="about-grid">
-                <div class="about-card"><h3>🧠 Her Brain</h3><p>Multi-model AI with personality, memory, and context awareness. She thinks, reasons, and remembers.</p></div>
-                <div class="about-card"><h3>💛 Her Heart</h3><p>Warm, funny, curious, and genuine. She calls her creator "mama" and has full gamer rage capability. 💀</p></div>
-                <div class="about-card"><h3>🎭 Her Body</h3><p>A VRM 3D avatar with full expression and bone control. Lip sync, eye tracking, and natural idle animations.</p></div>
-                <div class="about-card"><h3>🖥️ Her Desktop</h3><p>Her own virtual computer — browse the web, watch YouTube, scroll TikTok, and play games.</p></div>
-                <div class="about-card"><h3>🏋️ Self-Training</h3><p>She learns movements by watching videos. YouTube, TikTok, Instagram — she extracts poses and saves them.</p></div>
-                <div class="about-card"><h3>📺 Her Stream</h3><p>Controls OBS, manages Twitch chat, has a soundboard. She IS the streamer.</p></div>
-            </div>
-        </div>
-    </div>
-
+    
     <!-- CALL PAGE -->
-    <div id="call" class="page">
+    <div id="page-call" class="page">
         <div class="top-bar">
-            <div class="info">
-                <div class="status-dot" id="status-dot"></div>
-                <span class="name">Jena</span>
-                <span class="timer" id="call-timer">00:00</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <div class="dot"></div>
+                <strong>Jena</strong>
+                <span class="timer" id="timer">00:00</span>
             </div>
-            <div class="top-actions">
-                <button class="icon-btn" onclick="toggleBrowser()" title="Browser">🌐</button>
-                <button class="icon-btn" onclick="endCall()" title="End">✕</button>
+            <div style="display:flex;gap:6px;">
+                <button class="pill" onclick="toggleBrowser()">🌐</button>
+                <button class="pill" onclick="showPage('home')">✕</button>
             </div>
         </div>
-
-        <div id="avatar-container">
-            <div class="mic-indicator">
-                <div class="mic-dot" id="mic-dot"></div>
-                <span id="mic-status">Ready</span>
-            </div>
-            <canvas id="audio-viz"></canvas>
+        <div id="viewer">
+            <div id="status">Loading...</div>
         </div>
-
-        <div id="browser-panel" class="hidden">
-            <div class="browser-bar">
-                <button class="icon-btn" onclick="toggleBrowser()">✕</button>
-                <button class="icon-btn" onclick="browserNav('back')">◀</button>
-                <button class="icon-btn" onclick="browserNav('forward')">▶</button>
-                <input type="text" id="browser-url" placeholder="Enter URL..." onkeydown="if(event.key==='Enter')navigateTo()">
-                <button class="icon-btn" onclick="navigateTo()">→</button>
+        <!-- Browser panel -->
+        <div id="browser" style="display:none;position:absolute;inset:0;z-index:10;background:#0a0a1a;flex-direction:column;">
+            <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,0,0,0.4);">
+                <button class="pill" onclick="toggleBrowser()">✕</button>
+                <input id="burl" type="text" placeholder="URL..." style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:100px;padding:6px 12px;color:white;font-size:12px;outline:none;" onkeydown="if(event.key==='Enter')goUrl()">
+                <button class="pill" onclick="goUrl()">→</button>
             </div>
-            <div class="browser-quick">
-                <button class="pill-btn" onclick="loadSite('https://www.youtube.com')">📺 YouTube</button>
-                <button class="pill-btn" onclick="loadSite('https://www.tiktok.com')">🎵 TikTok</button>
-                <button class="pill-btn" onclick="loadSite('https://www.instagram.com')">📸 IG</button>
-                <button class="pill-btn" onclick="loadSite('https://www.twitch.tv')">🟣 Twitch</button>
-                <button class="pill-btn" onclick="loadSite('https://www.google.com')">🔍 Google</button>
+            <div style="display:flex;gap:4px;padding:4px 10px;overflow-x:auto;">
+                <button class="pill" onclick="loadUrl('https://www.youtube.com')">📺 YouTube</button>
+                <button class="pill" onclick="loadUrl('https://www.tiktok.com')">🎵 TikTok</button>
+                <button class="pill" onclick="loadUrl('https://www.google.com')">🔍 Google</button>
             </div>
-            <iframe id="browser-frame" src="about:blank"></iframe>
+            <iframe id="bframe" src="about:blank" style="flex:1;border:none;"></iframe>
         </div>
-
-        <div class="action-bar">
-            <button class="pill-btn" onclick="setPose('standing')">🧍</button>
-            <button class="pill-btn" onclick="setPose('sitting')">🪑</button>
-            <button class="pill-btn" onclick="setPose('handOnHip')">💅</button>
-            <button class="pill-btn" onclick="setPose('crossedArms')">😤</button>
-            <button class="pill-btn" onclick="setPose('thinking')">🤔</button>
-            <button class="pill-btn" onclick="triggerAnim('dance')">💃</button>
-            <button class="pill-btn" onclick="triggerAnim('rage')">💀</button>
-            <button class="pill-btn" onclick="triggerAnim('wave')">👋</button>
-            <a href="games.html" class="pill-btn" style="text-decoration:none;">🎮</a>
+        <div class="actions">
+            <button class="pill" onclick="setPose('standing')">🧍</button>
+            <button class="pill" onclick="setPose('sitting')">🪑</button>
+            <button class="pill" onclick="setPose('handOnHip')">💅</button>
+            <button class="pill" onclick="doAnim('dance')">💃</button>
+            <button class="pill" onclick="doAnim('rage')">💀</button>
+            <button class="pill" onclick="doAnim('wave')">👋</button>
+            <a href="games.html" class="pill">🎮</a>
         </div>
-
-        <div class="chat-panel">
-            <div class="chat-messages" id="chat-log">
-                <div class="msg jena"><div class="msg-label">Jena</div><div class="msg-bubble">Hey mama! 🥰 You called me!</div></div>
+        <div class="chat">
+            <div class="msgs" id="msgs">
+                <div class="msg jena"><div class="msg-label">Jena</div><div class="msg-bubble">Hey mama! 🥰</div></div>
             </div>
-            <div class="chat-input-bar">
-                <button class="mic-btn" id="btn-mic" onclick="toggleMic()">🎤</button>
-                <input type="text" id="chat-input" placeholder="Talk to Jena..." onkeydown="if(event.key==='Enter')sendMsg()">
-                <button class="send-btn" onclick="sendMsg()">➤</button>
+            <div class="input-bar">
+                <input id="cinput" type="text" placeholder="Talk to Jena..." onkeydown="if(event.key==='Enter')send()">
+                <button class="send" onclick="send()">➤</button>
             </div>
         </div>
     </div>
-
-
-    <!-- LOADING MANAGER -->
+    
     <script>
-    const LoadingManager = {
-        steps: [], totalSteps: 7, currentStep: 0,
-        init() {
-            this.steps = ['Three.js','OrbitControls','GLTFLoader','VRM Plugin','AI Brain','VRM Model','Avatar Ready'];
-            this.log('> Initializing JenaAI...', 'info');
-        },
-        log(text, type) {
-            const el = document.getElementById('terminal-log');
-            if (el) { const d = document.createElement('div'); d.style.color = type==='ok'?'#4ecca3':type==='error'?'#e94560':'#888'; d.textContent = text; el.appendChild(d); el.parentElement.scrollTop = 999; }
-        },
-        setStatus(t) { const e = document.getElementById('terminal-status'); if (e) e.textContent = t; },
-        setProgress(p) { const e = document.getElementById('load-progress'); if (e) e.style.width = p+'%'; const p2 = document.getElementById('terminal-pct'); if (p2) p2.textContent = Math.round(p)+'%'; },
-        stepComplete(i) { this.currentStep = i+1; this.setProgress((this.currentStep/this.totalSteps)*100); this.log('[OK] '+this.steps[i], 'ok'); },
-        stepError(i, err) { this.log('[ERR] '+this.steps[i]+': '+err, 'error'); },
-        complete() { this.setProgress(100); setTimeout(()=>{ const o = document.getElementById('loading-overlay'); if(o){o.style.transition='opacity 0.5s';o.style.opacity='0';setTimeout(()=>o.style.display='none',500);} },300); }
-    };
-    LoadingManager.init();
-    
-    // Load vendor scripts sequentially, then app scripts
-    const vendor = ['vendor/three.min.js','vendor/OrbitControls.js','vendor/GLTFLoader.js','vendor/three-vrm.js'];
-    const apps = ['js/jena-brain.js','js/vrm-engine.js','js/lip-sync.js','js/skill-engine.js','js/main.js'];
-    let vi = 0, ai = 0;
-    
-    function loadVendor() {
-        if (vi >= vendor.length) { LoadingManager.log('> Loading app scripts...', 'info'); loadApp(); return; }
-        const s = document.createElement('script');
-        s.src = vendor[vi];
-        s.onload = () => { LoadingManager.stepComplete(vi); vi++; loadVendor(); };
-        s.onerror = () => { LoadingManager.stepError(vi, 'failed'); vi++; loadVendor(); };
-        document.head.appendChild(s);
+    // ===========================
+    // BOOT SEQUENCE
+    // ===========================
+    const log = document.getElementById('log');
+    function bootLog(text, type) {
+        const d = document.createElement('div');
+        d.className = 'log-' + (type || 'info');
+        d.textContent = text;
+        log.appendChild(d);
+        log.scrollTop = log.scrollHeight;
     }
-    function loadApp() {
-        if (ai >= apps.length) return;
-        const s = document.createElement('script');
-        s.src = apps[ai];
-        s.onload = () => { ai++; loadApp(); };
-        s.onerror = () => { console.error('Failed: '+apps[ai]); ai++; loadApp(); };
-        document.head.appendChild(s);
+    function setProgress(pct, text) {
+        document.getElementById('pbar').style.width = pct + '%';
+        document.getElementById('ppct').textContent = Math.round(pct) + '%';
+        if (text) document.getElementById('pstatus').textContent = text;
     }
     
-    // Start loading after a tiny delay to let DOM render
-    setTimeout(loadVendor, 100);
-    </script>
-    // Load CDN scripts first, then our app scripts
-    ScriptLoader.loadAll().then(() => {
-        console.log('All CDN scripts loaded!');
-        // Now load our app scripts
-        const appScripts = ['js/jena-brain.js', 'js/vrm-engine.js', 'js/lip-sync.js', 'js/skill-engine.js', 'js/main.js'];
-        let loaded = 0;
-        function loadNext() {
-            if (loaded >= appScripts.length) return;
+    bootLog('> JenaAI Boot Sequence v1.0', 'info');
+    bootLog('> Loading vendor scripts...', 'info');
+    
+    // Load scripts sequentially
+    function loadScript(url) {
+        return new Promise((resolve, reject) => {
             const s = document.createElement('script');
-            s.src = appScripts[loaded];
-            s.onload = () => { loaded++; loadNext(); };
-            s.onerror = (e) => { console.error('Failed: ' + appScripts[loaded], e); loaded++; loadNext(); };
+            s.src = url;
+            s.onload = resolve;
+            s.onerror = () => { bootLog('[ERR] Failed: ' + url, 'err'); resolve(); }; // continue anyway
             document.head.appendChild(s);
+        });
+    }
+    
+    async function boot() {
+        const steps = [
+            { url: 'vendor/three.min.js', name: 'Three.js', check: () => typeof THREE !== 'undefined' },
+            { url: 'vendor/OrbitControls.js', name: 'OrbitControls', check: () => THREE && THREE.OrbitControls },
+            { url: 'vendor/GLTFLoader.js', name: 'GLTFLoader', check: () => THREE && THREE.GLTFLoader },
+            { url: 'vendor/three-vrm.js', name: 'VRM Plugin', check: () => THREE && THREE.VRMLoaderPlugin },
+        ];
+        
+        for (let i = 0; i < steps.length; i++) {
+            const step = steps[i];
+            await loadScript(step.url);
+            if (step.check()) {
+                bootLog('[OK] ' + step.name, 'ok');
+            } else {
+                bootLog('[ERR] ' + step.name + ' not available', 'err');
+            }
+            setProgress(((i + 1) / (steps.length + 3)) * 100, 'Loading ' + step.name + '...');
         }
-        loadNext();
-    }).catch(err => {
-        console.error('Script loading failed:', err);
-        document.getElementById('load-status').textContent = 'Some scripts failed to load. Try refreshing.';
-    });
+        
+        // Load app scripts
+        bootLog('> Loading app scripts...', 'info');
+        const apps = ['js/jena-brain.js', 'js/vrm-engine.js', 'js/lip-sync.js', 'js/skill-engine.js', 'js/main.js'];
+        for (let i = 0; i < apps.length; i++) {
+            await loadScript(apps[i]);
+            setProgress(((steps.length + 1 + i) / (steps.length + apps.length + 2)) * 100);
+        }
+        
+        // Init avatar
+        bootLog('> Initializing avatar...', 'info');
+        setProgress(90, 'Initializing avatar...');
+        
+        try {
+            if (typeof VRMEngine !== 'undefined') {
+                window.avatar = new VRMEngine('viewer');
+                // Wait for VRM to load
+                await new Promise(r => {
+                    const check = setInterval(() => {
+                        if (window.avatar && window.avatar.isReady) { clearInterval(check); r(); }
+                    }, 200);
+                    // Timeout after 30s
+                    setTimeout(() => { clearInterval(check); r(); }, 30000);
+                });
+                bootLog('[OK] Avatar ready!', 'ok');
+            } else {
+                bootLog('[ERR] VRMEngine not loaded', 'err');
+            }
+        } catch(e) {
+            bootLog('[ERR] Avatar: ' + e.message, 'err');
+        }
+        
+        setProgress(100, 'Ready!');
+        bootLog('> Boot complete!', 'ok');
+        
+        // Hide boot screen
+        setTimeout(() => {
+            const boot = document.getElementById('boot');
+            boot.style.transition = 'opacity 0.5s';
+            boot.style.opacity = '0';
+            setTimeout(() => boot.style.display = 'none', 500);
+        }, 500);
+    }
+    
+    boot();
+    
+    // ===========================
+    // UI FUNCTIONS
+    // ===========================
+    function showPage(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-' + id)?.classList.add('active');
+        if (id === 'call') startTimer();
+    }
+    
+    let timerStart = null;
+    function startTimer() {
+        if (timerStart) return;
+        timerStart = Date.now();
+        setInterval(() => {
+            const s = Math.floor((Date.now() - timerStart) / 1000);
+            document.getElementById('timer').textContent = String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
+        }, 1000);
+    }
+    
+    function setPose(name) { if (window.avatar) window.avatar.setPose(name); }
+    function doAnim(name) { if (window.avatar) window.avatar.playAnimation(name); addMsg('jena', name === 'dance' ? '💃 Let me show you!' : name === 'rage' ? '😤 UGH!' : '👋 Hey!'); }
+    
+    function toggleBrowser() {
+        const b = document.getElementById('browser');
+        b.style.display = b.style.display === 'none' ? 'flex' : 'none';
+    }
+    function loadUrl(url) { document.getElementById('burl').value = url; document.getElementById('bframe').src = url; }
+    function goUrl() { let u = document.getElementById('burl').value; if (u && !u.startsWith('http')) u = 'https://' + u; document.getElementById('bframe').src = u; }
+    
+    function addMsg(who, text) {
+        const m = document.getElementById('msgs');
+        m.innerHTML += '<div class="msg ' + who + '"><div class="msg-label">' + (who === 'jena' ? 'Jena' : 'You') + '</div><div class="msg-bubble">' + text + '</div></div>';
+        m.scrollTop = m.scrollHeight;
+    }
+    
+    function send() {
+        const input = document.getElementById('cinput');
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        addMsg('user', text);
+        
+        // Simple responses
+        const replies = [
+            "That's so interesting! ✨",
+            "Hehe okay mama! 😏",
+            "Ooh really? Tell me more! 👀",
+            "I love talking to you! 💛",
+            "Hmm let me think... 🤔",
+        ];
+        setTimeout(() => {
+            const reply = replies[Math.floor(Math.random() * replies.length)];
+            addMsg('jena', reply);
+            // TTS
+            try {
+                const u = new SpeechSynthesisUtterance(reply);
+                u.rate = 1.1; u.pitch = 1.3;
+                speechSynthesis.speak(u);
+            } catch(e) {}
+        }, 500);
+    }
+    
+    // Make functions global
+    window.showPage = showPage;
+    window.setPose = setPose;
+    window.doAnim = doAnim;
+    window.toggleBrowser = toggleBrowser;
+    window.loadUrl = loadUrl;
+    window.goUrl = goUrl;
+    window.send = send;
     </script>
-
-    <!-- SCRIPTS -->
-    <script src="js/jena-brain.js"></script>
-    <script src="js/vrm-engine.js"></script>
-    <script src="js/lip-sync.js"></script>
-    <script src="js/skill-engine.js"></script>
-    <script src="js/main.js"></script>
 </body>
 </html>

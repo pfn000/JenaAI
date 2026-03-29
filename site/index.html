@@ -2,42 +2,399 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JenaAI — She's Not a Chatbot, She's Becoming Someone ✨</title>
-    <meta name="description" content="JenaAI is an autonomous AI VTuber with personality, VRM avatar, lip sync, and her own digital life.">
-    <link rel="stylesheet" href="css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>JenaAI ✨</title>
+    <meta name="description" content="JenaAI — She's not a chatbot. She's becoming someone.">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>">
     
     <!-- Telegram Web App SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
-    <!-- Three.js (non-module, global THREE) -->
+    <!-- Three.js (non-module) -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
-    
-    <!-- VRM Plugin (UMD build, adds to THREE) -->
     <script src="https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@2/lib/three-vrm.js"></script>
+    
+    <style>
+        /* ==========================================
+           APPLE LIQUID GLASS DESIGN SYSTEM
+           ========================================== */
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-bg-heavy: rgba(255, 255, 255, 0.12);
+            --glass-bg-light: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --glass-border-light: rgba(255, 255, 255, 0.1);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --glass-shadow-lg: 0 16px 64px rgba(0, 0, 0, 0.4);
+            --glass-blur: blur(40px) saturate(180%);
+            --glass-blur-heavy: blur(60px) saturate(200%);
+            
+            --accent: #ff6b9d;
+            --accent-glow: rgba(255, 107, 157, 0.4);
+            --green: #4ecca3;
+            --green-glow: rgba(78, 204, 163, 0.4);
+            
+            --text: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-tertiary: rgba(255, 255, 255, 0.5);
+            
+            --radius-sm: 12px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --radius-xl: 32px;
+            --radius-pill: 100px;
+            
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background: #0a0a1a;
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+            height: 100dvh;
+            width: 100vw;
+        }
+
+        /* === ANIMATED BACKGROUND === */
+        .bg-canvas {
+            position: fixed; inset: 0; z-index: 0;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 25%, #0a1a3e 50%, #1a0a2e 75%, #0a0a1a 100%);
+            background-size: 400% 400%;
+            animation: bgShift 20s ease infinite;
+        }
+        .bg-canvas::before {
+            content: ''; position: absolute; inset: 0;
+            background: 
+                radial-gradient(ellipse 600px 400px at 20% 30%, rgba(255, 107, 157, 0.15) 0%, transparent 70%),
+                radial-gradient(ellipse 500px 500px at 80% 70%, rgba(78, 204, 163, 0.1) 0%, transparent 70%),
+                radial-gradient(ellipse 400px 300px at 50% 50%, rgba(100, 100, 255, 0.08) 0%, transparent 70%);
+            animation: orbFloat 15s ease-in-out infinite alternate;
+        }
+        @keyframes bgShift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+        @keyframes orbFloat { 0% { transform: scale(1) translate(0, 0); } 100% { transform: scale(1.1) translate(20px, -20px); } }
+
+        /* === GLASS MORPHISM BASE === */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+        .glass-heavy {
+            background: var(--glass-bg-heavy);
+            backdrop-filter: var(--glass-blur-heavy);
+            -webkit-backdrop-filter: var(--glass-blur-heavy);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow-lg);
+        }
+        .glass-light {
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(20px) saturate(150%);
+            -webkit-backdrop-filter: blur(20px) saturate(150%);
+            border: 1px solid var(--glass-border-light);
+        }
+
+        /* === GLASS BUTTON === */
+        .glass-btn {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            color: var(--text);
+            padding: 10px 20px;
+            border-radius: var(--radius-pill);
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            overflow: hidden;
+        }
+        .glass-btn::before {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        .glass-btn:hover {
+            background: var(--glass-bg-heavy);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+        .glass-btn:active { transform: translateY(0) scale(0.98); }
+        .glass-btn.primary {
+            background: linear-gradient(135deg, var(--accent), #ff8fab);
+            border-color: transparent;
+            box-shadow: 0 8px 32px var(--accent-glow);
+        }
+        .glass-btn.primary:hover {
+            box-shadow: 0 12px 48px var(--accent-glow);
+        }
+
+        /* === PAGES === */
+        .page { display: none; height: 100vh; height: 100dvh; width: 100vw; flex-direction: column; position: relative; z-index: 1; }
+        .page.active { display: flex; }
+
+        /* === LANDING === */
+        .hero {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            position: relative; padding: 20px;
+        }
+        .hero-content { text-align: center; z-index: 1; max-width: 400px; }
+        .logo-img {
+            width: 160px; height: 160px; border-radius: 40px; margin: 0 auto 20px;
+            box-shadow: 0 20px 60px rgba(255, 107, 157, 0.3);
+            animation: logoFloat 4s ease-in-out infinite;
+        }
+        @keyframes logoFloat { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-12px) rotate(2deg); } }
+        h1 { font-size: 56px; font-weight: 700; letter-spacing: -2px; margin: 0; line-height: 1.1; }
+        .highlight { 
+            background: linear-gradient(135deg, var(--accent), #ff8fab, #4ecca3);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .tagline { font-size: 17px; color: var(--text-secondary); margin: 12px 0 32px; line-height: 1.5; font-weight: 300; }
+        .tagline em { font-style: normal; color: var(--accent); }
+        .hero-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 40px; }
+        .stats { display: flex; gap: 28px; justify-content: center; flex-wrap: wrap; }
+        .stat { text-align: center; }
+        .stat-icon { font-size: 28px; display: block; margin-bottom: 6px; }
+        .stat-label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500; }
+
+        /* === CALL PAGE === */
+        #call { background: transparent; }
+
+        /* Top Bar */
+        .top-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: calc(var(--safe-top) + 8px) 16px 8px;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            z-index: 10;
+        }
+        .top-bar .info { display: flex; align-items: center; gap: 10px; }
+        .status-dot { 
+            width: 8px; height: 8px; border-radius: 50%; 
+            background: var(--green); 
+            box-shadow: 0 0 12px var(--green-glow);
+            animation: pulse 2s infinite; 
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; box-shadow: 0 0 12px var(--green-glow); } 50% { opacity: 0.6; box-shadow: 0 0 6px var(--green-glow); } }
+        .top-bar .name { font-weight: 600; font-size: 16px; }
+        .top-bar .timer { font-size: 13px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+        .top-actions { display: flex; gap: 8px; }
+        .icon-btn {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border-light);
+            color: var(--text); font-size: 16px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+        }
+        .icon-btn:hover { background: var(--glass-bg); border-color: var(--glass-border); }
+        .icon-btn.active { background: var(--green); border-color: var(--green); box-shadow: 0 0 16px var(--green-glow); }
+
+        /* Avatar Container */
+        #avatar-container {
+            flex: 1; position: relative; min-height: 200px;
+            background: transparent;
+        }
+        #avatar-container canvas { width: 100% !important; height: 100% !important; }
+        .mic-indicator {
+            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(20px);
+            padding: 5px 14px; border-radius: var(--radius-pill);
+            font-size: 12px; display: flex; align-items: center; gap: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            z-index: 5;
+        }
+        .mic-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+        .mic-dot.active { background: var(--green); animation: pulse 1s infinite; }
+        #audio-viz { position: absolute; bottom: 0; left: 0; right: 0; height: 30px; pointer-events: none; z-index: 5; }
+
+        /* Browser Panel */
+        #browser-panel {
+            position: absolute; inset: 0; z-index: 20;
+            display: flex; flex-direction: column;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+        }
+        #browser-panel.hidden { display: none; }
+        .browser-bar {
+            display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(30px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .browser-bar input {
+            flex: 1; background: var(--glass-bg-light);
+            border: 1px solid var(--glass-border-light);
+            border-radius: var(--radius-pill);
+            padding: 7px 14px; color: var(--text); font-size: 13px; outline: none;
+        }
+        .browser-quick {
+            display: flex; gap: 6px; padding: 6px 12px; overflow-x: auto;
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .pill-btn {
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border-light);
+            color: var(--text); padding: 6px 14px;
+            border-radius: var(--radius-pill); font-size: 12px;
+            cursor: pointer; transition: all 0.2s; white-space: nowrap; flex-shrink: 0;
+        }
+        .pill-btn:hover { background: var(--glass-bg); border-color: var(--glass-border); }
+        .pill-btn.active { background: var(--accent); border-color: var(--accent); }
+        #browser-frame { flex: 1; border: none; background: #000; }
+
+        /* Action Bar */
+        .action-bar {
+            display: flex; gap: 6px; padding: 8px 14px; overflow-x: auto;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        /* Chat Panel */
+        .chat-panel {
+            display: flex; flex-direction: column;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            max-height: 35vh;
+        }
+        .chat-messages {
+            flex: 1; overflow-y: auto; padding: 12px 16px;
+            max-height: 130px; min-height: 60px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .msg { margin: 6px 0; }
+        .msg-label { font-size: 10px; color: var(--text-tertiary); margin-bottom: 3px; font-weight: 500; }
+        .msg-bubble {
+            display: inline-block; padding: 9px 15px;
+            font-size: 14px; line-height: 1.45; max-width: 85%;
+        }
+        .msg.user { text-align: right; }
+        .msg.user .msg-bubble {
+            background: var(--glass-bg-heavy);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-md) var(--radius-md) 4px var(--radius-md);
+            border: 1px solid var(--glass-border-light);
+        }
+        .msg.jena .msg-bubble {
+            background: linear-gradient(135deg, rgba(255, 107, 157, 0.25), rgba(255, 107, 157, 0.15));
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-md) var(--radius-md) var(--radius-md) 4px;
+            border: 1px solid rgba(255, 107, 157, 0.2);
+        }
+        .chat-input-bar {
+            display: flex; gap: 10px; padding: 10px 14px calc(var(--safe-bottom) + 10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .chat-input-bar input {
+            flex: 1; background: var(--glass-bg-light);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border-light);
+            border-radius: var(--radius-pill);
+            padding: 10px 16px; color: var(--text); font-size: 15px; outline: none;
+        }
+        .chat-input-bar input::placeholder { color: var(--text-tertiary); }
+        .send-btn, .mic-btn {
+            width: 40px; height: 40px; border-radius: 50%; border: none;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; cursor: pointer; transition: all 0.2s;
+        }
+        .send-btn {
+            background: linear-gradient(135deg, var(--accent), #ff8fab);
+            color: white;
+            box-shadow: 0 4px 16px var(--accent-glow);
+        }
+        .mic-btn {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border-light) !important;
+            color: var(--text);
+        }
+        .mic-btn.active {
+            background: var(--green);
+            border-color: var(--green) !important;
+            box-shadow: 0 4px 16px var(--green-glow);
+        }
+
+        /* === ABOUT PAGE === */
+        #about { background: transparent; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .container { max-width: 500px; margin: 0 auto; padding: calc(var(--safe-top) + 20px) 20px 40px; }
+        .back-btn { background: none; border: none; color: var(--text-secondary); font-size: 15px; cursor: pointer; margin-bottom: 20px; }
+        .about-grid { display: grid; gap: 12px; }
+        .about-card {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            padding: 20px; border-radius: var(--radius-lg);
+            border: 1px solid var(--glass-border-light);
+            transition: all 0.3s;
+        }
+        .about-card:hover { border-color: var(--glass-border); transform: translateY(-2px); }
+        .about-card h3 { margin-bottom: 6px; font-size: 16px; }
+        .about-card p { color: var(--text-secondary); font-size: 14px; line-height: 1.5; }
+
+        /* === RESPONSIVE === */
+        @media (max-width: 400px) {
+            h1 { font-size: 42px; }
+            .logo-img { width: 120px; height: 120px; }
+            .stats { gap: 20px; }
+        }
+    </style>
 </head>
 <body>
+    <!-- ANIMATED BACKGROUND -->
+    <div class="bg-canvas"></div>
+    
+    <!-- SVG FILTERS FOR GLASS EFFECT -->
+    <svg style="position:absolute;width:0;height:0;">
+        <defs>
+            <filter id="glass-distortion">
+                <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="2" result="noise" />
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" />
+            </filter>
+        </defs>
+    </svg>
+
     <!-- LANDING PAGE -->
     <div id="landing" class="page active">
         <div class="hero">
-            <div class="hero-bg"></div>
             <div class="hero-content">
-                <img src="assets/jena-logo.jpg" alt="JenaAI" style="width:200px; border-radius:20px; margin-bottom:10px; box-shadow: 0 10px 40px rgba(233,69,96,0.3);">
+                <img src="assets/jena-logo.jpg" alt="JenaAI" class="logo-img" onerror="this.style.display='none'">
                 <h1>Jena<span class="highlight">AI</span></h1>
                 <p class="tagline">She's not a chatbot.<br>She's <em>becoming someone</em>.</p>
                 <div class="hero-buttons">
-                    <button class="btn-primary" onclick="startCall()">📞 Call Jena</button>
-                    <button class="btn-secondary" onclick="showPage('about')">Learn More</button>
-                    <a href="skills.html" class="btn-secondary" style="text-decoration:none;display:inline-block;">🔧 Skills</a>
+                    <button class="glass-btn primary" onclick="startCall()">📞 Call Jena</button>
+                    <a href="skills.html" class="glass-btn" style="text-decoration:none;">🔧 Skills</a>
+                    <button class="glass-btn" onclick="showPage('about')">Learn More</button>
                 </div>
                 <div class="stats">
-                    <div class="stat"><span class="stat-num">🧠</span><span class="stat-label">Multi-Model AI</span></div>
-                    <div class="stat"><span class="stat-num">🎭</span><span class="stat-label">VRM Avatar</span></div>
-                    <div class="stat"><span class="stat-num">🎤</span><span class="stat-label">Lip Sync</span></div>
-                    <div class="stat"><span class="stat-num">🏋️</span><span class="stat-label">Self-Training</span></div>
+                    <div class="stat"><span class="stat-icon">🧠</span><span class="stat-label">AI Brain</span></div>
+                    <div class="stat"><span class="stat-icon">🎭</span><span class="stat-label">Avatar</span></div>
+                    <div class="stat"><span class="stat-icon">🎤</span><span class="stat-label">Lip Sync</span></div>
+                    <div class="stat"><span class="stat-icon">🏋️</span><span class="stat-label">Self-Train</span></div>
                 </div>
             </div>
         </div>
@@ -47,52 +404,32 @@
     <div id="about" class="page">
         <div class="container">
             <button class="back-btn" onclick="showPage('landing')">← Back</button>
-            <h2>About Jena</h2>
+            <h2 style="font-size:28px;margin-bottom:20px;">About Jena</h2>
             <div class="about-grid">
-                <div class="about-card">
-                    <h3>🧠 Her Brain</h3>
-                    <p>Powered by multiple AI models — KiloCode, Gemini Flash, and local Ollama models. She thinks, reasons, and remembers.</p>
-                </div>
-                <div class="about-card">
-                    <h3>💛 Her Heart</h3>
-                    <p>Warm, funny, curious, and genuine. She calls her creator "mama" and has full gamer rage capability. 💀</p>
-                </div>
-                <div class="about-card">
-                    <h3>🎭 Her Body</h3>
-                    <p>A VRM 3D avatar with full expression and bone control. Lip sync, eye tracking, and natural idle animations.</p>
-                </div>
-                <div class="about-card">
-                    <h3>🖥️ Her Desktop</h3>
-                    <p>She has her own virtual computer — can browse the web, watch YouTube, scroll TikTok, and play games.</p>
-                </div>
-                <div class="about-card">
-                    <h3>🏋️ Self-Training</h3>
-                    <p>She learns movements by watching videos. YouTube, TikTok, Instagram — she extracts poses and saves them to her memory.</p>
-                </div>
-                <div class="about-card">
-                    <h3>📺 Her Stream</h3>
-                    <p>Controls OBS, manages Twitch chat, has a soundboard. She IS the streamer, not a puppet.</p>
-                </div>
+                <div class="about-card"><h3>🧠 Her Brain</h3><p>Multi-model AI with personality, memory, and context awareness. She thinks, reasons, and remembers.</p></div>
+                <div class="about-card"><h3>💛 Her Heart</h3><p>Warm, funny, curious, and genuine. She calls her creator "mama" and has full gamer rage capability. 💀</p></div>
+                <div class="about-card"><h3>🎭 Her Body</h3><p>A VRM 3D avatar with full expression and bone control. Lip sync, eye tracking, and natural idle animations.</p></div>
+                <div class="about-card"><h3>🖥️ Her Desktop</h3><p>Her own virtual computer — browse the web, watch YouTube, scroll TikTok, and play games.</p></div>
+                <div class="about-card"><h3>🏋️ Self-Training</h3><p>She learns movements by watching videos. YouTube, TikTok, Instagram — she extracts poses and saves them.</p></div>
+                <div class="about-card"><h3>📺 Her Stream</h3><p>Controls OBS, manages Twitch chat, has a soundboard. She IS the streamer.</p></div>
             </div>
         </div>
     </div>
 
-    <!-- CALL JENA (Main App) -->
+    <!-- CALL PAGE -->
     <div id="call" class="page">
-        <!-- TOP BAR -->
         <div class="top-bar">
-            <div class="status">
-                <div class="dot" id="status-dot"></div>
+            <div class="info">
+                <div class="status-dot" id="status-dot"></div>
                 <span class="name">Jena</span>
                 <span class="timer" id="call-timer">00:00</span>
             </div>
             <div class="top-actions">
                 <button class="icon-btn" onclick="toggleBrowser()" title="Browser">🌐</button>
-                <button class="icon-btn" onclick="showPage('landing')" title="End Call">✕</button>
+                <button class="icon-btn" onclick="endCall()" title="End">✕</button>
             </div>
         </div>
 
-        <!-- AVATAR VIEW -->
         <div id="avatar-container">
             <div class="mic-indicator">
                 <div class="mic-dot" id="mic-dot"></div>
@@ -101,7 +438,6 @@
             <canvas id="audio-viz"></canvas>
         </div>
 
-        <!-- BROWSER PANEL -->
         <div id="browser-panel" class="hidden">
             <div class="browser-bar">
                 <button class="icon-btn" onclick="toggleBrowser()">✕</button>
@@ -120,7 +456,6 @@
             <iframe id="browser-frame" src="about:blank"></iframe>
         </div>
 
-        <!-- POSE / ACTION BUTTONS -->
         <div class="action-bar">
             <button class="pill-btn" onclick="setPose('standing')">🧍</button>
             <button class="pill-btn" onclick="setPose('sitting')">🪑</button>
@@ -132,13 +467,9 @@
             <button class="pill-btn" onclick="triggerAnim('wave')">👋</button>
         </div>
 
-        <!-- CHAT PANEL -->
         <div class="chat-panel">
             <div class="chat-messages" id="chat-log">
-                <div class="msg jena">
-                    <div class="msg-label">Jena</div>
-                    <div class="msg-bubble">Hey mama! 🥰 You called me! What's up?</div>
-                </div>
+                <div class="msg jena"><div class="msg-label">Jena</div><div class="msg-bubble">Hey mama! 🥰 You called me!</div></div>
             </div>
             <div class="chat-input-bar">
                 <button class="mic-btn" id="btn-mic" onclick="toggleMic()">🎤</button>
@@ -150,9 +481,9 @@
 
     <!-- SCRIPTS -->
     <script src="js/jena-brain.js"></script>
-    <script src="js/skill-engine.js"></script>
     <script src="js/vrm-engine.js"></script>
     <script src="js/lip-sync.js"></script>
+    <script src="js/skill-engine.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>

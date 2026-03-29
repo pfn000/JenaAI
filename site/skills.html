@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JenaAI Skills & MCPs</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
+    <style>
+        .skills-page { display: flex; height: 100vh; background: #0f0f1a; color: white; }
+        .sidebar { width: 280px; background: #1a1a2e; padding: 16px; overflow-y: auto; border-right: 1px solid rgba(255,255,255,0.05); }
+        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .main-header { padding: 12px 16px; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 12px; }
+        .editor { flex: 1; display: flex; flex-direction: column; }
+        .code-editor { flex: 1; background: #0d1117; border: none; color: #c9d1d9; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13px; padding: 16px; resize: none; outline: none; line-height: 1.6; }
+        .output { height: 200px; background: #161b22; border-top: 1px solid rgba(255,255,255,0.1); padding: 12px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+        .output .success { color: #4ecca3; }
+        .output .error { color: #e94560; }
+        .output .info { color: #58a6ff; }
+        .skill-item { padding: 10px 12px; margin: 4px 0; background: rgba(255,255,255,0.05); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .skill-item:hover { background: rgba(233,69,96,0.2); }
+        .skill-item.active { background: rgba(233,69,96,0.3); border-left: 3px solid #e94560; }
+        .skill-item h4 { font-size: 13px; margin-bottom: 2px; }
+        .skill-item p { font-size: 11px; color: #888; }
+        .skill-item .triggers { font-size: 10px; color: #4ecca3; margin-top: 4px; }
+        .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin: 16px 0 8px; }
+        .tabs { display: flex; gap: 0; }
+        .tab { padding: 8px 16px; background: transparent; border: none; color: #888; cursor: pointer; font-size: 12px; border-bottom: 2px solid transparent; }
+        .tab.active { color: #e94560; border-bottom-color: #e94560; }
+        .btn-row { display: flex; gap: 8px; padding: 8px 16px; }
+        .btn-sm { background: #e94560; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 11px; cursor: pointer; }
+        .btn-sm:hover { background: #ff6b6b; }
+        .btn-sm.green { background: #4ecca3; color: #0f0f1a; }
+        .btn-sm.outline { background: transparent; border: 1px solid rgba(255,255,255,0.2); }
+        .templates { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; padding: 12px 16px; }
+        .template-card { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
+        .template-card:hover { border-color: #e94560; }
+        .template-card h4 { font-size: 12px; margin-bottom: 4px; }
+        .template-card pre { font-size: 10px; color: #888; white-space: pre-wrap; max-height: 60px; overflow: hidden; }
+        .mcp-list { padding: 12px 16px; }
+        .mcp-item { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin: 6px 0; }
+        .mcp-item h4 { font-size: 13px; }
+        .mcp-item .type { font-size: 10px; color: #4ecca3; background: rgba(78,204,163,0.1); padding: 2px 8px; border-radius: 10px; display: inline-block; margin: 4px 0; }
+    </style>
+</head>
+<body>
+    <div class="skills-page">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+                <span style="font-size:24px;">🔧</span>
+                <div>
+                    <h3 style="font-size:14px;">JenaAI Skills</h3>
+                    <p style="font-size:10px;color:#888;">Self-coding & MCP system</p>
+                </div>
+            </div>
+            
+            <button class="btn-sm" onclick="createNewSkill()" style="width:100%;margin-bottom:12px;">+ New Skill</button>
+            
+            <div class="section-title">📝 Skills</div>
+            <div id="skills-list"></div>
+            
+            <div class="section-title">🔌 MCPs</div>
+            <div id="mcps-list"></div>
+            
+            <div class="section-title">📁 Files</div>
+            <div id="files-list"></div>
+            
+            <a href="index.html" style="display:block;text-align:center;margin-top:16px;color:#888;font-size:12px;">← Back to Jena</a>
+        </div>
+        
+        <!-- MAIN -->
+        <div class="main">
+            <div class="main-header">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('editor')">💻 Editor</button>
+                    <button class="tab" onclick="switchTab('templates')">📋 Templates</button>
+                    <button class="tab" onclick="switchTab('mcps')">🔌 MCPs</button>
+                    <button class="tab" onclick="switchTab('console')">🖥️ Console</button>
+                </div>
+            </div>
+            
+            <!-- EDITOR TAB -->
+            <div id="tab-editor" class="editor">
+                <div class="btn-row">
+                    <input type="text" id="skill-name" placeholder="Skill name..." style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 10px;color:white;font-size:12px;outline:none;">
+                    <input type="text" id="skill-triggers" placeholder="Triggers (comma-separated)..." style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 10px;color:white;font-size:12px;outline:none;">
+                    <button class="btn-sm green" onclick="saveSkill()">💾 Save</button>
+                    <button class="btn-sm" onclick="runSkill()">▶️ Run</button>
+                    <button class="btn-sm outline" onclick="deleteSkill()">🗑️</button>
+                </div>
+                <textarea id="code-editor" class="code-editor" placeholder="// Write your skill code here...
+// Available context:
+// - jena: JenaAI API (speak, setPose, setExpression, etc.)
+// - fs.read(path) / fs.write(path, content) / fs.list(dir)
+// - skills.get(name) / skills.list()
+// - console.log() / console.error()
+// - Return a string to respond to the user
+
+return 'Hello from my new skill! ✨';"></textarea>
+                <div class="output" id="output">
+                    <div class="info">🔧 JenaAI Skill Editor — Write code, run it, save it.</div>
+                </div>
+            </div>
+            
+            <!-- TEMPLATES TAB -->
+            <div id="tab-templates" style="display:none;overflow-y:auto;flex:1;">
+                <div class="templates" id="templates-grid"></div>
+            </div>
+            
+            <!-- MCPs TAB -->
+            <div id="tab-mcps" style="display:none;overflow-y:auto;flex:1;">
+                <div class="btn-row">
+                    <button class="btn-sm" onclick="createNewMCP()">+ New MCP</button>
+                </div>
+                <div class="mcp-list" id="mcp-list-full"></div>
+            </div>
+            
+            <!-- CONSOLE TAB -->
+            <div id="tab-console" style="display:none;flex:1;flex-direction:column;">
+                <div class="output" id="console-output" style="flex:1;height:auto;"></div>
+                <div class="btn-row">
+                    <input type="text" id="console-input" placeholder="Type a command or message to test..." style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:8px 12px;color:white;font-size:12px;outline:none;" onkeydown="if(event.key==='Enter')runConsole()">
+                    <button class="btn-sm" onclick="runConsole()">Run</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/jena-brain.js"></script>
+    <script src="js/skill-engine.js"></script>
+    <script>
+        // === INIT ===
+        const skills = new SkillEngine();
+        const brain = new JenaBrain();
+        let currentSkill = null;
+
+        // Mock jena API for testing
+        window.jena = {
+            speak: (text) => logOutput('🗣️ TTS: ' + text, 'info'),
+            setPose: (name) => logOutput('🧍 Pose: ' + name, 'info'),
+            setExpression: (name, val) => logOutput('😊 Expression: ' + name + '=' + val, 'info'),
+            sendMessage: (text) => {
+                const r = brain.think(text);
+                logOutput('👤 User: ' + text, 'info');
+                logOutput('🤖 Jena: ' + r.text, 'success');
+            },
+        };
+
+        // === RENDER SKILLS LIST ===
+        function renderSkillsList() {
+            const container = document.getElementById('skills-list');
+            container.innerHTML = skills.listSkills().map(s => `
+                <div class="skill-item ${currentSkill === s.name ? 'active' : ''}" onclick="selectSkill('${s.name}')">
+                    <h4>${s.enabled ? '✅' : '⏸️'} ${s.name}</h4>
+                    <p>${s.description}</p>
+                    <div class="triggers">🎯 ${s.triggers.join(', ')}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderMCPsList() {
+            const sidebar = document.getElementById('mcps-list');
+            const full = document.getElementById('mcp-list-full');
+            const mcps = skills.listMCPs();
+            
+            const html = mcps.map(m => `
+                <div class="mcp-item">
+                    <h4>${m.name}</h4>
+                    <span class="type">${m.type}</span>
+                    <p style="font-size:11px;color:#888;margin-top:4px;">${m.description}</p>
+                </div>
+            `).join('') || '<p style="font-size:11px;color:#666;padding:8px;">No MCPs yet</p>';
+            
+            sidebar.innerHTML = html;
+            full.innerHTML = html;
+        }
+
+        function renderFilesList() {
+            const container = document.getElementById('files-list');
+            const files = skills.listFiles();
+            container.innerHTML = files.map(f => `
+                <div class="skill-item" onclick="loadFile('${f.path}')">
+                    <h4>📄 ${f.path}</h4>
+                    <p>${new Date(f.modified).toLocaleString()}</p>
+                </div>
+            `).join('') || '<p style="font-size:11px;color:#666;padding:8px;">No files yet</p>';
+        }
+
+        function renderTemplates() {
+            const container = document.getElementById('templates-grid');
+            const templates = skills.getEditorTemplate();
+            container.innerHTML = Object.entries(templates).map(([name, code]) => `
+                <div class="template-card" onclick="useTemplate(\`${name}\`)">
+                    <h4>📋 ${name}</h4>
+                    <pre>${code.substring(0, 150)}...</pre>
+                </div>
+            `).join('');
+        }
+
+        // === SKILL OPERATIONS ===
+        function selectSkill(name) {
+            currentSkill = name;
+            const skill = skills.getSkill(name);
+            if (skill) {
+                document.getElementById('skill-name').value = skill.name;
+                document.getElementById('skill-triggers').value = skill.triggers.join(', ');
+                document.getElementById('code-editor').value = skill.code;
+            }
+            renderSkillsList();
+        }
+
+        function createNewSkill() {
+            currentSkill = null;
+            document.getElementById('skill-name').value = '';
+            document.getElementById('skill-triggers').value = '';
+            document.getElementById('code-editor').value = '// New skill\nreturn "Hello! ✨";';
+            renderSkillsList();
+        }
+
+        function saveSkill() {
+            const name = document.getElementById('skill-name').value.trim();
+            const triggers = document.getElementById('skill-triggers').value.split(',').map(t => t.trim()).filter(Boolean);
+            const code = document.getElementById('code-editor').value;
+
+            if (!name) { logOutput('❌ Skill name required', 'error'); return; }
+
+            if (currentSkill && currentSkill !== name) {
+                skills.deleteSkill(currentSkill);
+            }
+
+            skills.createSkill(name, {
+                description: `Custom skill: ${name}`,
+                triggers,
+                code,
+                author: 'Jena',
+            });
+
+            currentSkill = name;
+            logOutput(`✅ Skill "${name}" saved!`, 'success');
+            renderSkillsList();
+        }
+
+        function runSkill() {
+            const code = document.getElementById('code-editor').value;
+            const name = document.getElementById('skill-name').value || 'temp';
+
+            // Create temp skill and run it
+            skills.createSkill('__temp__', {
+                description: 'Temporary test skill',
+                triggers: [],
+                code,
+            });
+
+            const result = skills.executeSkill('__temp__', {});
+            skills.deleteSkill('__temp__');
+
+            if (result.success) {
+                logOutput(`✅ Result: ${JSON.stringify(result.result)}`, 'success');
+            } else {
+                logOutput(`❌ Error: ${result.error}`, 'error');
+            }
+        }
+
+        function deleteSkill() {
+            if (!currentSkill) return;
+            skills.deleteSkill(currentSkill);
+            currentSkill = null;
+            createNewSkill();
+            logOutput('🗑️ Skill deleted', 'info');
+            renderSkillsList();
+        }
+
+        function loadFile(path) {
+            const content = skills.readFile(path);
+            if (content !== null) {
+                document.getElementById('code-editor').value = content;
+                document.getElementById('skill-name').value = path;
+                logOutput(`📄 Loaded: ${path}`, 'info');
+            }
+        }
+
+        function useTemplate(name) {
+            const templates = skills.getEditorTemplate();
+            if (templates[name]) {
+                document.getElementById('code-editor').value = templates[name];
+                document.getElementById('skill-name').value = name.toLowerCase().replace(/\s+/g, '-');
+                switchTab('editor');
+                logOutput(`📋 Template loaded: ${name}`, 'info');
+            }
+        }
+
+        function createNewMCP() {
+            const name = prompt('MCP name:');
+            if (!name) return;
+            skills.createMCP(name, {
+                description: 'Custom MCP tool',
+                type: 'tool',
+                handler: 'return "MCP result for: " + params.input;',
+            });
+            renderMCPsList();
+            logOutput(`🔌 MCP "${name}" created!`, 'success');
+        }
+
+        // === TABS ===
+        function switchTab(tab) {
+            document.querySelectorAll('[id^="tab-"]').forEach(t => t.style.display = 'none');
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + tab).style.display = 'flex';
+            event.target.classList.add('active');
+            
+            if (tab === 'templates') renderTemplates();
+            if (tab === 'mcps') renderMCPsList();
+        }
+
+        // === CONSOLE ===
+        function runConsole() {
+            const input = document.getElementById('console-input');
+            const text = input.value.trim();
+            if (!text) return;
+            input.value = '';
+
+            logOutput('> ' + text, 'info');
+
+            // Check if it matches a skill trigger
+            const match = skills.matchTrigger(text);
+            if (match) {
+                const result = skills.executeSkill(match.skill, { input: text });
+                if (result.success) {
+                    logOutput(`[Skill:${match.skill}] ${result.result}`, 'success');
+                } else {
+                    logOutput(`[Skill:${match.skill}] Error: ${result.error}`, 'error');
+                }
+            } else {
+                // Use brain
+                const response = brain.think(text);
+                logOutput(`🤖 ${response.text}`, 'success');
+            }
+        }
+
+        function logOutput(text, type = 'info') {
+            const output = document.getElementById('output');
+            const console = document.getElementById('console-output');
+            const div = `<div class="${type}">${text}</div>`;
+            if (output) output.innerHTML += div;
+            if (console) console.innerHTML += div;
+        }
+
+        // === INIT ===
+        renderSkillsList();
+        renderMCPsList();
+        renderFilesList();
+        renderTemplates();
+        
+        logOutput('🔧 JenaAI Skill Engine loaded!', 'success');
+        logOutput(`📝 ${skills.listSkills().length} skills available`, 'info');
+        logOutput(`🔌 ${skills.listMCPs().length} MCPs configured`, 'info');
+    </script>
+</body>
+</html>

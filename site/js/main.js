@@ -243,3 +243,39 @@ window.jena = {
 
 console.log('✨ JenaAI fully loaded!');
 console.log('Access via window.jena');
+
+// === SKILL ENGINE INTEGRATION ===
+let skillEngine;
+document.addEventListener('DOMContentLoaded', () => {
+    skillEngine = new SkillEngine();
+    console.log('🔧 SkillEngine loaded with', skillEngine.listSkills().length, 'skills');
+});
+
+// Override sendMsg to check skills first
+const originalSendMsg = window.sendMsg;
+function enhancedSendMsg() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+    
+    // Check for skill triggers first
+    if (skillEngine) {
+        const match = skillEngine.matchTrigger(text);
+        if (match) {
+            input.value = '';
+            addChatMessage('user', text);
+            const result = skillEngine.executeSkill(match.skill, { input: text });
+            if (result.success && result.result) {
+                setTimeout(() => {
+                    addChatMessage('jena', String(result.result));
+                    if (lipSync) lipSync.speak(String(result.result));
+                }, 300);
+                return;
+            }
+        }
+    }
+    
+    // Fall back to brain
+    originalSendMsg();
+}
+window.sendMsg = enhancedSendMsg;

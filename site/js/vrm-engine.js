@@ -34,7 +34,17 @@ class VRMEngine {
 
         // Camera
         this.camera = new THREE.PerspectiveCamera(30, 1, 0.1, 20);
-        this.camera.position.set(0, 1.0, 3.2);
+        this.camera.position.set(0, 1.2, 3.0);
+        
+        // Camera controls (optional, for user interaction)
+        try {
+            this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+            this.controls.target.set(0, 1.0, 0);
+            this.controls.screenSpacePanning = false;
+            this.controls.enableDamping = true;
+            this.controls.dampingFactor = 0.05;
+            this.controls.update();
+        } catch(e) { console.log('OrbitControls not available'); }
 
         // Scene
         this.scene = new THREE.Scene();
@@ -88,6 +98,7 @@ class VRMEngine {
                 this.scene.add(this.vrm.scene);
                 
                 // Face forward toward camera
+                // Face camera: VRM models face -Z, camera is at +Z
                 this.vrm.scene.rotation.y = Math.PI;
                 
                 // Apply natural standing pose
@@ -292,6 +303,7 @@ class VRMEngine {
         const delta = this.clock.getDelta();
         const t = this.clock.elapsedTime;
         this.updateAnimations(t, delta);
+        if (this.controls) this.controls.update();
         this.renderer.render(this.scene, this.camera);
     }
 

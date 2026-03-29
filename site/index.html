@@ -519,6 +519,25 @@
 
     <!-- LOADING MANAGER -->
     <script>
+    // Load vendor scripts first, then app scripts
+    function loadVendorScripts() {
+        const vendorScripts = ['vendor/three.min.js', 'vendor/OrbitControls.js', 'vendor/GLTFLoader.js', 'vendor/three-vrm.js'];
+        let idx = 0;
+        
+        return new Promise((resolve, reject) => {
+            function loadNext() {
+                if (idx >= vendorScripts.length) { resolve(); return; }
+                const s = document.createElement('script');
+                s.src = vendorScripts[idx];
+                s.onload = () => { console.log('✅ ' + vendorScripts[idx]); idx++; loadNext(); };
+                s.onerror = (e) => { console.error('❌ ' + vendorScripts[idx]); idx++; loadNext(); };
+                document.head.appendChild(s);
+            }
+            loadNext();
+        });
+    }
+    </script>
+    <script>
     const LoadingManager = {
         steps: [],
         currentStep: 0,
@@ -628,7 +647,25 @@
     };
     
     LoadingManager.terminalLog('> Initializing JenaAI...', 'info');
-    LoadingManager.init();
+    
+    // Load vendor scripts first
+    loadVendorScripts().then(() => {
+        LoadingManager.terminalLog('> Vendor scripts loaded', 'ok');
+        LoadingManager.init();
+        
+        // Now load app scripts
+        const appScripts = ['js/jena-brain.js', 'js/vrm-engine.js', 'js/lip-sync.js', 'js/skill-engine.js', 'js/main.js'];
+        let loaded = 0;
+        function loadApp() {
+            if (loaded >= appScripts.length) return;
+            const s = document.createElement('script');
+            s.src = appScripts[loaded];
+            s.onload = () => { loaded++; loadApp(); };
+            s.onerror = (e) => { console.error('Failed: ' + appScripts[loaded]); loaded++; loadApp(); };
+            document.head.appendChild(s);
+        }
+        loadApp();
+    });
     // Load CDN scripts first, then our app scripts
     ScriptLoader.loadAll().then(() => {
         console.log('All CDN scripts loaded!');

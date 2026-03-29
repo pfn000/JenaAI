@@ -20,6 +20,9 @@ class VRMEngine {
     }
 
     async init() {
+        // Report to LoadingManager
+        if (window.LoadingManager) LoadingManager.setStatus('Creating renderer...');
+        
         // Renderer
         this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -27,6 +30,7 @@ class VRMEngine {
         this.renderer.toneMappingExposure = 1.2;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         this.container.insertBefore(this.renderer.domElement, this.container.firstChild);
+        if (window.LoadingManager) { LoadingManager.setStatus('Renderer ready'); LoadingManager.stepComplete(4); }
 
         // Camera
         this.camera = new THREE.PerspectiveCamera(30, 1, 0.1, 20);
@@ -71,9 +75,11 @@ class VRMEngine {
         loader.register((p) => new THREE.VRMLoaderPlugin(p));
 
         const vrmUrl = url || './avatars/vivi.vrm';
+        if (window.LoadingManager) LoadingManager.setStatus('Downloading VRM model...');
         
         return new Promise((resolve, reject) => {
             loader.load(vrmUrl, (gltf) => {
+                if (window.LoadingManager) LoadingManager.setStatus('VRM loaded, processing...');
                 this.vrm = gltf.userData.vrm;
                 // VRMUtils.removeUnnecessaryVertices - v2 API
                 // VRMUtils.combineSkeletons - v2 API
@@ -85,12 +91,17 @@ class VRMEngine {
                 this.setPose('standing');
                 this.isReady = true;
                 
+                if (window.LoadingManager) { LoadingManager.stepComplete(5); LoadingManager.setStatus('Avatar ready!'); LoadingManager.stepComplete(6); LoadingManager.complete(); }
                 document.getElementById('mic-status').textContent = 'Jena is ready!';
                 resolve(this.vrm);
             }, (progress) => {
                 const pct = 100 * (progress.loaded / progress.total);
                 document.getElementById('mic-status').textContent = 'Loading... ' + pct.toFixed(0) + '%';
-            }, reject);
+                if (window.LoadingManager) { LoadingManager.setStatus('Downloading VRM... ' + pct.toFixed(0) + '%'); }
+            }, (error) => {
+                if (window.LoadingManager) LoadingManager.stepError(5, error.message);
+                reject(error);
+            });
         });
     }
 

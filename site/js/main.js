@@ -5,6 +5,14 @@
  * Ties together the brain, avatar, lip sync, browser, and UI.
  */
 
+// Report CDN scripts loaded
+if (window.LoadingManager) {
+    if (typeof THREE !== 'undefined') LoadingManager.stepComplete(0);
+    if (typeof THREE !== 'undefined' && THREE.OrbitControls) LoadingManager.stepComplete(1);
+    if (typeof THREE !== 'undefined' && THREE.GLTFLoader) LoadingManager.stepComplete(2);
+    if (typeof THREE !== 'undefined' && THREE.VRMLoaderPlugin) LoadingManager.stepComplete(3);
+}
+
 // === GLOBALS ===
 let brain, avatar, lipSync;
 let callStartTime = null;
@@ -22,6 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Initialize brain
     brain = new JenaBrain();
+    if (window.LoadingManager) { LoadingManager.setStatus('AI Brain initialized'); LoadingManager.stepComplete(4); }
     console.log('🧠 JenaBrain initialized');
 
     // Load voices for TTS

@@ -583,6 +583,25 @@
     }
     
     LoadingManager.init();
+    // Load CDN scripts first, then our app scripts
+    ScriptLoader.loadAll().then(() => {
+        console.log('All CDN scripts loaded!');
+        // Now load our app scripts
+        const appScripts = ['js/jena-brain.js', 'js/vrm-engine.js', 'js/lip-sync.js', 'js/skill-engine.js', 'js/main.js'];
+        let loaded = 0;
+        function loadNext() {
+            if (loaded >= appScripts.length) return;
+            const s = document.createElement('script');
+            s.src = appScripts[loaded];
+            s.onload = () => { loaded++; loadNext(); };
+            s.onerror = (e) => { console.error('Failed: ' + appScripts[loaded], e); loaded++; loadNext(); };
+            document.head.appendChild(s);
+        }
+        loadNext();
+    }).catch(err => {
+        console.error('Script loading failed:', err);
+        document.getElementById('load-status').textContent = 'Some scripts failed to load. Try refreshing.';
+    });
     </script>
 
     <!-- SCRIPTS -->

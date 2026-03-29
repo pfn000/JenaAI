@@ -278,10 +278,9 @@
             // Init avatar with delay so viewer has dimensions
             if (!window.avatar && typeof VRMEngine !== 'undefined') {
                 document.getElementById('status').textContent = 'Loading avatar...';
-                console.log('THREE:', typeof THREE);
-                console.log('THREE_VRM:', typeof THREE_VRM);
-                console.log('VRMLoaderPlugin:', typeof THREE_VRM !== 'undefined' ? typeof THREE_VRM.VRMLoaderPlugin : 'N/A');
-                console.log('Viewer:', document.getElementById('viewer').clientWidth, 'x', document.getElementById('viewer').clientHeight);
+                var dbg = 'THREE:' + typeof THREE + ' | THREE_VRM:' + typeof THREE_VRM + ' | Viewer:' + document.getElementById('viewer').clientWidth + 'x' + document.getElementById('viewer').clientHeight;
+                document.getElementById('status').textContent = dbg;
+                console.log(dbg);
                 // Wait for layout to settle
                 setTimeout(() => {
                     const viewer = document.getElementById('viewer');

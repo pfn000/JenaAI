@@ -368,28 +368,37 @@
     <!-- ANIMATED BACKGROUND -->
     <div class="bg-canvas"></div>
 
-    <!-- LOADING OVERLAY -->
+    <!-- TERMINAL LOADING SCREEN -->
     <div id="loading-overlay" style="position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:#0a0a1a;">
-        <div style="text-align:center;max-width:320px;padding:20px;">
-            <div id="load-logo" style="font-size:60px;margin-bottom:16px;animation:pulse 2s infinite;">✨</div>
-            <h2 style="font-size:22px;font-weight:700;margin-bottom:4px;">Jena<span style="background:linear-gradient(135deg,#ff6b9d,#4ecca3);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">AI</span></h2>
-            <p id="load-status" style="color:rgba(255,255,255,0.5);font-size:13px;margin-bottom:20px;">Starting up...</p>
-            
-            <!-- Progress bar -->
-            <div style="background:rgba(255,255,255,0.1);border-radius:100px;height:6px;overflow:hidden;margin-bottom:12px;">
-                <div id="load-progress" style="width:0%;height:100%;background:linear-gradient(90deg,#ff6b9d,#4ecca3);border-radius:100px;transition:width 0.3s;"></div>
+        <div style="width:90%;max-width:480px;background:#111;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+            <!-- Terminal header -->
+            <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(255,255,255,0.05);border-bottom:1px solid rgba(255,255,255,0.05);">
+                <div style="width:10px;height:10px;border-radius:50%;background:#e94560;"></div>
+                <div style="width:10px;height:10px;border-radius:50%;background:#ffa500;"></div>
+                <div style="width:10px;height:10px;border-radius:50%;background:#4ecca3;"></div>
+                <span style="margin-left:8px;font-size:12px;color:#666;font-family:monospace;">jena-ai-boot</span>
             </div>
-            
-            <!-- Loading steps -->
-            <div id="load-steps" style="text-align:left;font-size:11px;color:rgba(255,255,255,0.3);"></div>
-            <div id="load-detail" style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:8px;"></div>
-            
-            <!-- Skip button (appears after 5s) -->
-            <button id="load-skip" onclick="skipLoading()" style="display:none;margin-top:16px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:8px 20px;border-radius:100px;font-size:12px;cursor:pointer;">Skip →</button>
+            <!-- Terminal body -->
+            <div style="padding:16px;font-family:'SF Mono','Fira Code','Courier New',monospace;font-size:12px;color:#4ecca3;min-height:200px;max-height:60vh;overflow-y:auto;" id="terminal-body">
+                <div style="color:#888;">JenaAI Boot Sequence v1.0</div>
+                <div style="color:#888;">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+                <div id="terminal-log"></div>
+            </div>
+            <!-- Progress bar -->
+            <div style="padding:0 16px 12px;">
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;font-family:monospace;margin-bottom:4px;">
+                    <span id="terminal-status">Booting...</span>
+                    <span id="terminal-pct">0%</span>
+                </div>
+                <div style="background:#222;border-radius:4px;height:6px;overflow:hidden;">
+                    <div id="load-progress" style="width:0%;height:100%;background:linear-gradient(90deg,#e94560,#4ecca3);border-radius:4px;transition:width 0.3s;"></div>
+                </div>
+            </div>
         </div>
     </div>
     <style>
-        @keyframes pulse { 0%,100% { transform:scale(1);opacity:1; } 50% { transform:scale(1.1);opacity:0.8; } }
+        @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
+        .cursor { animation: blink 1s infinite; }
     </style>
 
     
@@ -583,6 +592,42 @@
         if (overlay) overlay.style.display = 'none';
     }
     
+    // Override LoadingManager to use terminal
+    LoadingManager.terminalLog = function(text, type = 'info') {
+        const log = document.getElementById('terminal-log');
+        if (!log) return;
+        const colors = { ok: '#4ecca3', error: '#e94560', info: '#888', loading: '#ffa500' };
+        log.innerHTML += '<div style="color:' + (colors[type] || '#888') + ';">' + text + '</div>';
+        log.parentElement.scrollTop = log.parentElement.scrollHeight;
+    };
+    
+    const origSetStatus = LoadingManager.setStatus.bind(LoadingManager);
+    LoadingManager.setStatus = function(text) {
+        origSetStatus(text);
+        document.getElementById('terminal-status').textContent = text;
+    };
+    
+    const origSetProgress = LoadingManager.setProgress.bind(LoadingManager);
+    LoadingManager.setProgress = function(pct) {
+        origSetProgress(pct);
+        document.getElementById('terminal-pct').textContent = Math.round(pct) + '%';
+    };
+    
+    const origStepComplete = LoadingManager.stepComplete.bind(LoadingManager);
+    LoadingManager.stepComplete = function(index) {
+        origStepComplete(index);
+        const names = ['Three.js', 'OrbitControls', 'GLTFLoader', 'VRM Plugin', 'AI Brain', 'VRM Model', 'Avatar Ready'];
+        this.terminalLog('[OK] ' + (names[index] || 'Step ' + index) + ' loaded', 'ok');
+    };
+    
+    const origStepError = LoadingManager.stepError.bind(LoadingManager);
+    LoadingManager.stepError = function(index, error) {
+        origStepError(index, error);
+        const names = ['Three.js', 'OrbitControls', 'GLTFLoader', 'VRM Plugin', 'AI Brain', 'VRM Model', 'Avatar Ready'];
+        this.terminalLog('[ERR] ' + (names[index] || 'Step ' + index) + ': ' + error, 'error');
+    };
+    
+    LoadingManager.terminalLog('> Initializing JenaAI...', 'info');
     LoadingManager.init();
     // Load CDN scripts first, then our app scripts
     ScriptLoader.loadAll().then(() => {

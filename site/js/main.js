@@ -61,18 +61,22 @@ window.startCall = startCall;
 
 // === INITIALIZE CALL ===
 async function initCall() {
-    document.getElementById('mic-status').textContent = 'Starting up...';
+    // If avatar was already initialized by the boot sequence, reuse it
+    if (window.avatar && window.avatar.isReady) {
+        avatar = window.avatar;
+        console.log('🎭 VRMEngine reused from boot sequence');
+    } else if (!avatar) {
+        document.getElementById('mic-status').textContent = 'Starting up...';
+        avatar = new VRMEngine('viewer');
+        console.log('🎭 VRMEngine initializing...');
 
-    // Initialize VRM engine
-    avatar = new VRMEngine('avatar-container');
-    console.log('🎭 VRMEngine initializing...');
-
-    // Wait for VRM to load
-    await new Promise(resolve => {
-        const check = setInterval(() => {
-            if (avatar.isReady) { clearInterval(check); resolve(); }
-        }, 100);
-    });
+        // Wait for VRM to load
+        await new Promise(resolve => {
+            const check = setInterval(() => {
+                if (avatar.isReady) { clearInterval(check); resolve(); }
+            }, 100);
+        });
+    }
 
     // Initialize lip sync engine
     lipSync = new LipSyncEngine(avatar);

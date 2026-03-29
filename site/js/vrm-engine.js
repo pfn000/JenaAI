@@ -81,7 +81,7 @@ class VRMEngine {
     }
 
     async loadVRM(url) {
-        const loader = new GLTFLoader();
+        const loader = new THREE.GLTFLoader();
         loader.register((p) => new THREE.VRMLoaderPlugin(p));
 
         const vrmUrl = url || './avatars/vivi.vrm';
@@ -110,19 +110,24 @@ class VRMEngine {
                 this.isReady = true;
                 
                 if (window.LoadingManager) { LoadingManager.stepComplete(5); LoadingManager.setStatus('Avatar ready!'); LoadingManager.stepComplete(6); LoadingManager.complete(); }
-                document.getElementById('mic-status').textContent = 'Jena is ready!';
+                const micStatus = document.getElementById('mic-status');
+                if (micStatus) micStatus.textContent = 'Jena is ready!';
                 resolve(this.vrm);
             }, (progress) => {
                 const pct = 100 * (progress.loaded / progress.total);
                 const loadedMB = (progress.loaded / 1048576).toFixed(1);
                 const totalMB = (progress.total / 1048576).toFixed(1);
                 const status = 'Downloading VRM... ' + pct.toFixed(0) + '% (' + loadedMB + '/' + totalMB + ' MB)';
-                document.getElementById('mic-status').textContent = status;
+                const micStatus = document.getElementById('mic-status');
+                if (micStatus) micStatus.textContent = status;
                 if (window.LoadingManager) { 
                     LoadingManager.setStatus(status);
-                    // Update detail text
                     const detail = document.getElementById('load-detail');
                     if (detail) detail.textContent = loadedMB + ' MB of ' + totalMB + ' MB downloaded...';
+                }
+                // Update boot screen progress if present
+                if (typeof window.setBootProgress === 'function') {
+                    window.setBootProgress(80 + (pct / 100) * 15, status);
                 }
             }, (error) => {
                 if (window.LoadingManager) LoadingManager.stepError(5, error.message);

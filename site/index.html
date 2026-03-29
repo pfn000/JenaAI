@@ -176,22 +176,26 @@
         document.getElementById('ppct').textContent = Math.round(pct) + '%';
         if (text) document.getElementById('pstatus').textContent = text;
     }
+    window.setBootProgress = setProgress;
     
     bootLog('> JenaAI Boot Sequence v1.0', 'info');
     bootLog('> Loading vendor scripts...', 'info');
     
-    // Load scripts sequentially
+    // Load scripts sequentially — reject on failure so boot halts early
     function loadScript(url) {
         return new Promise((resolve, reject) => {
             const s = document.createElement('script');
             s.src = url;
             s.onload = resolve;
-            s.onerror = () => { bootLog('[ERR] Failed: ' + url, 'err'); resolve(); }; // continue anyway
+            s.onerror = () => { bootLog('[ERR] Failed: ' + url, 'err'); reject(new Error(url)); };
             document.head.appendChild(s);
         });
     }
     
     async function boot() {
+        const totalSteps = 10; // 4 vendor + 5 app + 1 avatar init
+        let step = 0;
+        
         const steps = [
             { url: 'vendor/three.min.js', name: 'Three.js', check: () => typeof THREE !== 'undefined' },
             { url: 'vendor/OrbitControls.js', name: 'OrbitControls', check: () => THREE && THREE.OrbitControls },
@@ -199,33 +203,35 @@
             { url: 'vendor/three-vrm.js', name: 'VRM Plugin', check: () => THREE && THREE.VRMLoaderPlugin },
         ];
         
-        for (let i = 0; i < steps.length; i++) {
-            const step = steps[i];
-            await loadScript(step.url);
-            if (step.check()) {
-                bootLog('[OK] ' + step.name, 'ok');
-            } else {
-                bootLog('[ERR] ' + step.name + ' not available', 'err');
-            }
-            setProgress(((i + 1) / (steps.length + 3)) * 100, 'Loading ' + step.name + '...');
-        }
-        
-        // Load app scripts
-        bootLog('> Loading app scripts...', 'info');
-        const apps = ['js/jena-brain.js', 'js/vrm-engine.js', 'js/lip-sync.js', 'js/skill-engine.js', 'js/main.js'];
-        for (let i = 0; i < apps.length; i++) {
-            await loadScript(apps[i]);
-            setProgress(((steps.length + 1 + i) / (steps.length + apps.length + 2)) * 100);
-        }
-        
-        // Init avatar
-        bootLog('> Initializing avatar...', 'info');
-        setProgress(90, 'Initializing avatar...');
-        
         try {
+            for (let i = 0; i < steps.length; i++) {
+                const s = steps[i];
+                await loadScript(s.url);
+                if (s.check()) {
+                    bootLog('[OK] ' + s.name, 'ok');
+                } else {
+                    bootLog('[ERR] ' + s.name + ' not available', 'err');
+                }
+                step++;
+                setProgress((step / totalSteps) * 100, 'Loading ' + s.name + '...');
+            }
+            
+            // Load app scripts
+            bootLog('> Loading app scripts...', 'info');
+            const apps = ['js/jena-brain.js', 'js/vrm-engine.js', 'js/lip-sync.js', 'js/skill-engine.js', 'js/main.js'];
+            for (let i = 0; i < apps.length; i++) {
+                await loadScript(apps[i]);
+                step++;
+                setProgress((step / totalSteps) * 100);
+            }
+            
+            // Init avatar
+            bootLog('> Initializing avatar...', 'info');
+            setProgress((step / totalSteps) * 100, 'Initializing avatar...');
+            
             if (typeof VRMEngine !== 'undefined') {
                 window.avatar = new VRMEngine('viewer');
-                // Wait for VRM to load
+                // Wait for VRM to load (real progress comes from vrm-engine's callback)
                 await new Promise(r => {
                     const check = setInterval(() => {
                         if (window.avatar && window.avatar.isReady) { clearInterval(check); r(); }
@@ -233,24 +239,30 @@
                     // Timeout after 30s
                     setTimeout(() => { clearInterval(check); r(); }, 30000);
                 });
-                bootLog('[OK] Avatar ready!', 'ok');
+                if (window.avatar && window.avatar.isReady) {
+                    bootLog('[OK] Avatar ready!', 'ok');
+                } else {
+                    bootLog('[ERR] Avatar load timed out', 'err');
+                }
             } else {
                 bootLog('[ERR] VRMEngine not loaded', 'err');
             }
+            step++;
+            setProgress(100, 'Ready!');
         } catch(e) {
-            bootLog('[ERR] Avatar: ' + e.message, 'err');
+            bootLog('[ERR] Boot failed: ' + e.message, 'err');
+            setProgress((step / totalSteps) * 100, 'Error');
         }
         
-        setProgress(100, 'Ready!');
         bootLog('> Boot complete!', 'ok');
         
         // Hide boot screen
         setTimeout(() => {
-            const boot = document.getElementById('boot');
-            boot.style.transition = 'opacity 0.5s';
-            boot.style.opacity = '0';
-            setTimeout(() => boot.style.display = 'none', 500);
-        }, 500);
+            const bootEl = document.getElementById('boot');
+            bootEl.style.transition = 'opacity 0.5s';
+            bootEl.style.opacity = '0';
+            setTimeout(() => bootEl.style.display = 'none', 500);
+        }, 800);
     }
     
     boot();

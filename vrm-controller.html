@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Jena VRM Controller</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1a1a2e; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+        #viewer { flex: 1; position: relative; }
+        canvas { display: block; }
+        #controls { width: 340px; background: #16213e; padding: 12px; overflow-y: auto; color: white; }
+        h2 { color: #e94560; margin: 10px 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+        h3 { color: #0f3460; background: #e94560; padding: 3px 8px; margin: 6px 0 4px; font-size: 11px; border-radius: 4px; }
+        .slider-group { margin: 3px 0; }
+        .slider-group label { display: flex; justify-content: space-between; font-size: 10px; color: #a0a0c0; }
+        .slider-group input[type="range"] { width: 100%; height: 4px; -webkit-appearance: none; background: #0f3460; border-radius: 2px; }
+        .slider-group input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: #e94560; border-radius: 50%; cursor: pointer; }
+        .value { color: #e94560; font-weight: bold; }
+        #info { position: absolute; top: 10px; left: 10px; color: white; background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 8px; font-size: 13px; z-index: 10; }
+        #status { position: absolute; bottom: 10px; left: 10px; color: #4ecca3; background: rgba(0,0,0,0.6); padding: 6px 12px; border-radius: 8px; font-size: 11px; z-index: 10; }
+        .btn { background: #e94560; color: white; border: none; padding: 5px 10px; margin: 3px 2px; border-radius: 4px; cursor: pointer; font-size: 10px; }
+        .btn:hover { background: #ff6b6b; }
+        .btn.active { background: #4ecca3; color: #1a1a2e; }
+        .btn-group { display: flex; flex-wrap: wrap; gap: 3px; margin: 3px 0; }
+        #audio-viz { width: 100%; height: 40px; background: #0f3460; border-radius: 4px; margin: 4px 0; }
+        .tab { display: none; }
+        .tab.active { display: block; }
+        .tab-btn { background: #0f3460; color: #a0a0c0; border: none; padding: 4px 8px; margin: 1px; cursor: pointer; font-size: 10px; border-radius: 3px 3px 0 0; }
+        .tab-btn.active { background: #e94560; color: white; }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+            "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3/lib/three-vrm.module.js"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div id="viewer">
+        <div id="info">Loading VRM...</div>
+        <div id="status">Ready</div>
+        <canvas id="audio-viz" style="position:absolute;bottom:40px;left:10px;width:300px;height:40px;"></canvas>
+    </div>
+    <div id="controls">
+        <h2>🎭 Jena Controller</h2>
+        
+        <!-- Tabs -->
+        <div>
+            <button class="tab-btn active" onclick="showTab('lip-sync')">🎙️ Lip Sync</button>
+            <button class="tab-btn" onclick="showTab('expressions')">😊 Expressions</button>
+            <button class="tab-btn" onclick="showTab('body')">🦴 Body</button>
+            <button class="tab-btn" onclick="showTab('presets')">🎬 Presets</button>
+            <button class="tab-btn" onclick="showTab('training')">🏋️ Training</button>
+        </div>
+
+        <!-- LIP SYNC TAB -->
+        <div id="tab-lip-sync" class="tab active">
+            <h3>🎙️ Lip Sync Engine</h3>
+            <div class="btn-group">
+                <button class="btn" id="btn-mic" onclick="toggleMic()">🎤 Start Mic</button>
+                <button class="btn" id="btn-tts" onclick="testTTS()">🗣️ Test TTS</button>
+            </div>
+            <div style="font-size:10px; color:#888; margin:4px 0;">
+                <div>Mode: <span id="lip-mode" style="color:#4ecca3">Off</span></div>
+                <div>Detected Vowel: <span id="lip-vowel" style="color:#e94560">-</span></div>
+                <div>Volume: <span id="lip-volume">0</span></div>
+            </div>
+            
+            <h3>🗣️ Speech Test</h3>
+            <input type="text" id="tts-text" placeholder="Type something for Jena to say..." 
+                style="width:100%; padding:6px; background:#0f3460; color:white; border:1px solid #e94560; border-radius:4px; font-size:11px; margin:4px 0;"
+                value="Hey chat! I'm Jena and I can talk now!">
+            <div class="btn-group">
+                <button class="btn" onclick="speakText()">🗣️ Speak</button>
+                <button class="btn" onclick="speakText('Hey chat please be typing with both hands!')">😏 Classic Line</button>
+                <button class="btn" onclick="speakText('Mama I regret nothing!')">📢 Soundboard</button>
+            </div>
+            
+            <h3>👁️ Eye Tracking</h3>
+            <div class="btn-group">
+                <button class="btn" id="btn-cam" onclick="toggleCamera()">📷 Start Camera</button>
+                <button class="btn" onclick="toggleEyeTrack()">👁️ Eye Track</button>
+            </div>
+            <div style="font-size:10px; color:#888; margin:4px 0;">
+                <div>Eyes: <span id="eye-status" style="color:#4ecca3">Off</span></div>
+                <div>Look: <span id="eye-dir">Center</span></div>
+            </div>
+            
+            <h3>📊 Audio Waveform</h3>
+            <div style="font-size:10px; color:#888;">Real-time audio visualization shown on screen</div>
+        </div>
+
+        <!-- EXPRESSIONS TAB -->
+        <div id="tab-expressions" class="tab">
+            <h3>😊 Mouth</h3>
+            <div class="slider-group"><label>Mouth (aa) <span class="value" id="v-aa">0</span></label><input type="range" min="0" max="100" value="0" data-expression="aa"></div>
+            <div class="slider-group"><label>Mouth (ih) <span class="value" id="v-ih">0</span></label><input type="range" min="0" max="100" value="0" data-expression="ih"></div>
+            <div class="slider-group"><label>Mouth (ou) <span class="value" id="v-ou">0</span></label><input type="range" min="0" max="100" value="0" data-expression="ou"></div>
+            <div class="slider-group"><label>Mouth (ee) <span class="value" id="v-ee">0</span></label><input type="range" min="0" max="100" value="0" data-expression="ee"></div>
+            <div class="slider-group"><label>Mouth (oh) <span class="value" id="v-oh">0</span></label><input type="range" min="0" max="100" value="0" data-expression="oh"></div>
+            
+            <h3>👁️ Eyes</h3>
+            <div class="slider-group"><label>Blink <span class="value" id="v-blink">0</span></label><input type="range" min="0" max="100" value="0" data-expression="blink"></div>
+            <div class="slider-group"><label>Blink Left <span class="value" id="v-blinkLeft">0</span></label><input type="range" min="0" max="100" value="0" data-expression="blinkLeft"></div>
+            <div class="slider-group"><label>Blink Right <span class="value" id="v-blinkRight">0</span></label><input type="range" min="0" max="100" value="0" data-expression="blinkRight"></div>
+            
+            <h3>😄 Emotions</h3>
+            <div class="slider-group"><label>Happy <span class="value" id="v-happy">0</span></label><input type="range" min="0" max="100" value="0" data-expression="happy"></div>
+            <div class="slider-group"><label>Angry <span class="value" id="v-angry">0</span></label><input type="range" min="0" max="100" value="0" data-expression="angry"></div>
+            <div class="slider-group"><label>Sad <span class="value" id="v-sad">0</span></label><input type="range" min="0" max="100" value="0" data-expression="sad"></div>
+            <div class="slider-group"><label>Surprised <span class="value" id="v-surprised">0</span></label><input type="range" min="0" max="100" value="0" data-expression="surprised"></div>
+        </div>
+
+        <!-- BODY TAB -->
+        <div id="tab-body" class="tab">
+            <h3>🦴 Head & Neck</h3>
+            <div class="slider-group"><label>Head Y (yaw) <span class="value" id="v-headY">0</span></label><input type="range" min="-50" max="50" value="0" data-bone="head" data-axis="y"></div>
+            <div class="slider-group"><label>Head X (pitch) <span class="value" id="v-headX">0</span></label><input type="range" min="-30" max="30" value="0" data-bone="head" data-axis="x"></div>
+            <div class="slider-group"><label>Head Z (tilt) <span class="value" id="v-headZ">0</span></label><input type="range" min="-30" max="30" value="0" data-bone="head" data-axis="z"></div>
+            <div class="slider-group"><label>Neck Y <span class="value" id="v-neckY">0</span></label><input type="range" min="-30" max="30" value="0" data-bone="neck" data-axis="y"></div>
+            
+            <h3>🦴 Torso</h3>
+            <div class="slider-group"><label>Spine X <span class="value" id="v-spineX">0</span></label><input type="range" min="-20" max="20" value="0" data-bone="spine" data-axis="x"></div>
+            <div class="slider-group"><label>Chest X <span class="value" id="v-chestX">0</span></label><input type="range" min="-15" max="15" value="0" data-bone="chest" data-axis="x"></div>
+            <div class="slider-group"><label>Hips Y <span class="value" id="v-hipsY">0</span></label><input type="range" min="-30" max="30" value="0" data-bone="hips" data-axis="y"></div>
+            <div class="slider-group"><label>Hips X <span class="value" id="v-hipsX">0</span></label><input type="range" min="-20" max="20" value="0" data-bone="hips" data-axis="x"></div>
+            
+            <h3>💪 Arms</h3>
+            <div class="slider-group"><label>L Arm Z <span class="value" id="v-lArmZ">0</span></label><input type="range" min="-100" max="100" value="0" data-bone="leftUpperArm" data-axis="z"></div>
+            <div class="slider-group"><label>R Arm Z <span class="value" id="v-rArmZ">0</span></label><input type="range" min="-100" max="100" value="0" data-bone="rightUpperArm" data-axis="z"></div>
+            <div class="slider-group"><label>L Arm X <span class="value" id="v-lArmX">0</span></label><input type="range" min="-100" max="100" value="0" data-bone="leftUpperArm" data-axis="x"></div>
+            <div class="slider-group"><label>R Arm X <span class="value" id="v-rArmX">0</span></label><input type="range" min="-100" max="100" value="0" data-bone="rightUpperArm" data-axis="x"></div>
+            <div class="slider-group"><label>L Forearm Y <span class="value" id="v-lForeY">0</span></label><input type="range" min="-100" max="100" value="0" data-bone="leftLowerArm" data-axis="y"></div>
+            <div class="slider-group"><label>R Forearm Y <span class="value" id="v-rForeY">0</span></label><input type="range" min="-100" max="100" value="0" data-bone="rightLowerArm" data-axis="y"></div>
+        </div>
+
+        <!-- PRESETS TAB -->
+        <div id="tab-presets" class="tab">
+            <h3>🎬 Emotional Presets</h3>
+            <div class="btn-group">
+                <button class="btn" onclick="preset('idle')">Idle</button>
+                <button class="btn" onclick="preset('wave')">Wave</button>
+                <button class="btn" onclick="preset('happy')">Happy</button>
+                <button class="btn" onclick="preset('sad')">Sad</button>
+                <button class="btn" onclick="preset('angry')">Angry</button>
+                <button class="btn" onclick="preset('surprised')">Surprised</button>
+                <button class="btn" onclick="preset('smug')">Smug</button>
+                <button class="btn" onclick="preset('thinking')">Thinking</button>
+                <button class="btn" onclick="preset('gamerRage')">💀 GAMER RAGE</button>
+                <button class="btn" onclick="preset('flirty')">😏 Flirty</button>
+                <button class="btn" onclick="preset('sleepy')">😴 Sleepy</button>
+            </div>
+            
+            <h3>🎥 Movement Animations</h3>
+            <div class="btn-group">
+                <button class="btn" onclick="playAnimation('nod')">Nod</button>
+                <button class="btn" onclick="playAnimation('shake')">Shake</button>
+                <button class="btn" onclick="playAnimation('tilt')">Tilt</button>
+                <button class="btn" onclick="playAnimation('shrug')">Shrug</button>
+                <button class="btn" onclick="playAnimation('dance')">Dance</button>
+                <button class="btn" onclick="playAnimation('breathing')">Breathe</button>
+                <button class="btn" onclick="playAnimation('hipSway')">Hip Sway</button>
+                <button class="btn" onclick="playAnimation('excited')">Excited</button>
+            </div>
+        </div>
+
+        <!-- TRAINING TAB -->
+        <div id="tab-training" class="tab">
+            <h3>🏋️ Movement Training</h3>
+            <p style="font-size:10px; color:#888;">Train movements by recording or loading animation data.</p>
+            
+            <h3>📹 Record Movement</h3>
+            <div class="btn-group">
+                <button class="btn" id="btn-record" onclick="toggleRecord()">⏺️ Start Recording</button>
+                <button class="btn" onclick="playRecording()">▶️ Play Recording</button>
+                <button class="btn" onclick="saveRecording()">💾 Save</button>
+            </div>
+            <div style="font-size:10px; color:#888;">
+                <div>Recording: <span id="rec-status" style="color:#4ecca3">Stopped</span></div>
+                <div>Frames: <span id="rec-frames">0</span></div>
+                <div>Duration: <span id="rec-duration">0s</span></div>
+            </div>
+            
+            <h3>📂 Movement Library</h3>
+            <div class="btn-group">
+                <button class="btn" onclick="loadMovement('wave')">👋 Wave</button>
+                <button class="btn" onclick="loadMovement('dance1')">💃 Dance 1</button>
+                <button class="btn" onclick="loadMovement('hipSway')">🍑 Hip Sway</button>
+                <button class="btn" onclick="exportMovements()">📤 Export All</button>
+            </div>
+            
+            <h3>📊 Debug</h3>
+            <div id="debug" style="font-size:9px; color:#666; max-height:60px; overflow-y:auto;"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
+
+        // === TAB SWITCHING ===
+        window.showTab = function(name) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + name)?.classList.add('active');
+            event.target.classList.add('active');
+        };
+
+        // === RENDERER ===
+        const viewerEl = document.getElementById('viewer');
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        viewerEl.insertBefore(renderer.domElement, viewerEl.firstChild);
+
+        function resize() {
+            const w = viewerEl.clientWidth, h = viewerEl.clientHeight;
+            renderer.setSize(w, h);
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+        }
+
+        const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 20);
+        camera.position.set(0, 1.0, 3.5);
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.screenSpacePanning = true;
+        controls.target.set(0, 0.9, 0);
+        controls.update();
+
+        const scene = new THREE.Scene();
+        scene.add(new THREE.DirectionalLight(0xfff4e6, 2.5).translateX(1).translateY(2).translateZ(1.5));
+        scene.add(new THREE.DirectionalLight(0xc4d4ff, 1.0).translateX(-1).translateY(1).translateZ(-0.5));
+        scene.add(new THREE.DirectionalLight(0xffeedd, 1.5).translateZ(-2).translateY(1));
+        scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+        scene.add(new THREE.HemisphereLight(0xaaddff, 0x443322, 0.5));
+        const ground = new THREE.Mesh(new THREE.CircleGeometry(2, 64), new THREE.MeshStandardMaterial({ color: 0x2a2a4e, roughness: 0.8 }));
+        ground.rotation.x = -Math.PI / 2;
+        scene.add(ground);
+
+        // === LOAD VRM ===
+        const loader = new GLTFLoader();
+        loader.register((p) => new VRMLoaderPlugin(p));
+        let vrm = null;
+
+        const urlParams = new URLSearchParams(location.search);
+        const vrmFile = urlParams.get('file') || './avatars/vivi.vrm';
+        document.getElementById('info').textContent = 'Loading: ' + vrmFile + '...';
+
+        loader.load(vrmFile, (gltf) => {
+            vrm = gltf.userData.vrm;
+            VRMUtils.removeUnnecessaryVertices(gltf.scene);
+            VRMUtils.combineSkeletons(gltf.scene);
+            VRMUtils.combineMorphs(vrm);
+            vrm.scene.traverse(o => o.frustumCulled = false);
+            scene.add(vrm.scene);
+            const title = vrm.meta?.meta?.title || vrm.meta?.title || 'Unknown';
+            document.getElementById('info').textContent = '✓ ' + title;
+            document.getElementById('status').textContent = 'Model loaded!';
+            resize();
+        }, (p) => {
+            document.getElementById('info').textContent = 'Loading... ' + (100 * p.loaded / p.total).toFixed(0) + '%';
+        }, (e) => document.getElementById('info').textContent = 'Error: ' + e.message);
+
+        // === AUDIO CONTEXT FOR LIP SYNC ===
+        let audioCtx = null;
+        let analyser = null;
+        let micStream = null;
+        let lipSyncActive = false;
+
+        async function startLipSync() {
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 256;
+                analyser.smoothingTimeConstant = 0.8;
+                
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const source = audioCtx.createMediaStreamSource(micStream);
+                source.connect(analyser);
+                
+                lipSyncActive = true;
+                document.getElementById('btn-mic').classList.add('active');
+                document.getElementById('btn-mic').textContent = '🎤 Stop Mic';
+                document.getElementById('lip-mode').textContent = 'Microphone';
+                document.getElementById('status').textContent = 'Lip sync active!';
+            } catch(e) {
+                document.getElementById('status').textContent = 'Mic error: ' + e.message;
+            }
+        }
+
+        function stopLipSync() {
+            lipSyncActive = false;
+            if (micStream) micStream.getTracks().forEach(t => t.stop());
+            if (audioCtx) audioCtx.close();
+            audioCtx = null;
+            analyser = null;
+            document.getElementById('btn-mic').classList.remove('active');
+            document.getElementById('btn-mic').textContent = '🎤 Start Mic';
+            document.getElementById('lip-mode').textContent = 'Off';
+        }
+
+        window.toggleMic = function() {
+            lipSyncActive ? stopLipSync() : startLipSync();
+        };
+
+        // === TTS WITH LIP SYNC ===
+        window.speakText = function(text) {
+            const msg = text || document.getElementById('tts-text').value;
+            if (!msg) return;
+            
+            const utterance = new SpeechSynthesisUtterance(msg);
+            utterance.rate = 1.1;
+            utterance.pitch = 1.3;
+            
+            // Pick a young female voice
+            const voices = speechSynthesis.getVoices();
+            const femaleVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Samantha') || v.name.includes('Google UK English Female')) || voices[0];
+            if (femaleVoice) utterance.voice = femaleVoice;
+            
+            // Animate mouth during speech
+            let speaking = true;
+            utterance.onstart = () => {
+                document.getElementById('lip-mode').textContent = 'TTS Speaking';
+                document.getElementById('status').textContent = '🗣️ Speaking...';
+            };
+            utterance.onend = () => {
+                speaking = false;
+                document.getElementById('lip-mode').textContent = 'Off';
+                document.getElementById('status').textContent = 'Done speaking';
+                if (vrm?.expressionManager) {
+                    ['aa','ih','ou','ee','oh'].forEach(v => vrm.expressionManager.setValue(v, 0));
+                }
+            };
+            
+            // Rough lip sync during TTS - oscillate mouth shapes
+            const lipInterval = setInterval(() => {
+                if (!speaking || !vrm?.expressionManager) { clearInterval(lipInterval); return; }
+                const shapes = ['aa', 'ih', 'ou', 'ee', 'oh'];
+                const active = shapes[Math.floor(Math.random() * shapes.length)];
+                shapes.forEach(s => vrm.expressionManager.setValue(s, s === active ? 0.5 + Math.random() * 0.5 : 0));
+            }, 80);
+            
+            speechSynthesis.speak(utterance);
+        };
+
+        window.testTTS = function() {
+            window.speakText("Hey chat! I'm Jena and I can talk now!");
+        };
+
+        // === AUDIO VISUALIZATION ===
+        const vizCanvas = document.getElementById('audio-viz');
+        const vizCtx = vizCanvas.getContext('2d');
+        vizCanvas.width = 300;
+        vizCanvas.height = 40;
+
+        function drawAudioViz(dataArray) {
+            vizCtx.fillStyle = 'rgba(15, 52, 96, 0.3)';
+            vizCtx.fillRect(0, 0, 300, 40);
+            vizCtx.fillStyle = '#e94560';
+            const barWidth = 300 / dataArray.length;
+            for (let i = 0; i < dataArray.length; i++) {
+                const h = (dataArray[i] / 255) * 40;
+                vizCtx.fillRect(i * barWidth, 40 - h, barWidth - 1, h);
+            }
+        }
+
+        // === LIP SYNC ANALYSIS ===
+        function analyzeAudio() {
+            if (!analyser || !lipSyncActive || !vrm?.expressionManager) return;
+            
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyser.getByteFrequencyData(dataArray);
+            
+            // Draw visualization
+            drawAudioViz(dataArray);
+            
+            // Split into frequency bands for vowel detection
+            const low = dataArray.slice(0, 10).reduce((a, b) => a + b, 0) / 10;      // 'aa' - low freq
+            const midLow = dataArray.slice(10, 30).reduce((a, b) => a + b, 0) / 20;   // 'oh' 
+            const mid = dataArray.slice(30, 60).reduce((a, b) => a + b, 0) / 30;       // 'ih'
+            const midHigh = dataArray.slice(60, 100).reduce((a, b) => a + b, 0) / 40;  // 'ee'
+            const high = dataArray.slice(100, 128).reduce((a, b) => a + b, 0) / 28;    // 'ou'
+            
+            // Volume
+            const volume = dataArray.reduce((a, b) => a + b, 0) / dataArray.length / 255;
+            document.getElementById('lip-volume').textContent = volume.toFixed(2);
+            
+            // Normalize and apply
+            const threshold = 0.1;
+            const scale = 2.0;
+            
+            const aa = Math.min(1, Math.max(0, (low / 255 - threshold) * scale));
+            const oh = Math.min(1, Math.max(0, (midLow / 255 - threshold) * scale));
+            const ih = Math.min(1, Math.max(0, (mid / 255 - threshold) * scale));
+            const ee = Math.min(1, Math.max(0, (midHigh / 255 - threshold) * scale));
+            const ou = Math.min(1, Math.max(0, (high / 255 - threshold) * scale));
+            
+            // Apply with smoothing
+            vrm.expressionManager.setValue('aa', aa);
+            vrm.expressionManager.setValue('ih', ih);
+            vrm.expressionManager.setValue('ou', ou);
+            vrm.expressionManager.setValue('ee', ee);
+            vrm.expressionManager.setValue('oh', oh);
+            
+            // Detect dominant vowel
+            const vowels = { aa, ih, ou, ee, oh };
+            const dominant = Object.entries(vowels).sort((a, b) => b[1] - a[1])[0];
+            document.getElementById('lip-vowel').textContent = dominant[1] > 0.1 ? dominant[0].toUpperCase() : '-';
+        }
+
+        // === EYE TRACKING (via camera) ===
+        let cameraStream = null;
+        let eyeTracking = false;
+        const videoEl = document.createElement('video');
+        videoEl.style.display = 'none';
+        document.body.appendChild(videoEl);
+
+        window.toggleCamera = async function() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(t => t.stop());
+                cameraStream = null;
+                document.getElementById('btn-cam').classList.remove('active');
+                document.getElementById('btn-cam').textContent = '📷 Start Camera';
+                return;
+            }
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } });
+                videoEl.srcObject = cameraStream;
+                videoEl.play();
+                document.getElementById('btn-cam').classList.add('active');
+                document.getElementById('btn-cam').textContent = '📷 Stop Camera';
+                document.getElementById('status').textContent = 'Camera active!';
+            } catch(e) {
+                document.getElementById('status').textContent = 'Camera error: ' + e.message;
+            }
+        };
+
+        window.toggleEyeTrack = function() {
+            eyeTracking = !eyeTracking;
+            document.getElementById('eye-status').textContent = eyeTracking ? 'Active' : 'Off';
+            if (eyeTracking && !cameraStream) window.toggleCamera();
+        };
+
+        // Simple eye tracking via face position (no ML - basic head tracking from camera)
+        function trackEyes() {
+            if (!eyeTracking || !cameraStream || !vrm) return;
+            
+            // Use video element brightness/position for basic tracking
+            // In production, you'd use MediaPipe face mesh here
+            const canvas = document.createElement('canvas');
+            canvas.width = 320;
+            canvas.height = 240;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(videoEl, 0, 0);
+            
+            // Simple face position estimation (center of brightness)
+            const imageData = ctx.getImageData(0, 0, 320, 240);
+            let sumX = 0, sumY = 0, count = 0;
+            for (let y = 60; y < 180; y += 4) {
+                for (let x = 80; x < 240; x += 4) {
+                    const i = (y * 320 + x) * 4;
+                    const brightness = (imageData.data[i] + imageData.data[i+1] + imageData.data[i+2]) / 3;
+                    if (brightness > 100) {
+                        sumX += x;
+                        sumY += y;
+                        count++;
+                    }
+                }
+            }
+            
+            if (count > 100) {
+                const centerX = sumX / count;
+                const centerY = sumY / count;
+                // Map to look direction (-1 to 1)
+                const lookX = (centerX - 160) / 80;
+                const lookY = (centerY - 120) / 60;
+                
+                // Apply to head bone
+                const head = vrm.humanoid?.getNormalizedBoneNode('head');
+                if (head) {
+                    head.rotation.y = -lookX * 0.3;
+                    head.rotation.x = lookY * 0.2;
+                }
+                
+                // Direction label
+                const dirX = lookX < -0.3 ? 'Left' : lookX > 0.3 ? 'Right' : '';
+                const dirY = lookY < -0.3 ? 'Up' : lookY > 0.3 ? 'Down' : '';
+                document.getElementById('eye-dir').textContent = (dirY + ' ' + dirX).trim() || 'Center';
+            }
+        }
+
+        // === SLIDER CONTROLS ===
+        document.querySelectorAll('input[type="range"]').forEach(slider => {
+            slider.addEventListener('input', (e) => {
+                const val = e.target.value / 100;
+                const label = e.target.parentElement.querySelector('.value');
+                if (e.target.dataset.expression) {
+                    const name = e.target.dataset.expression;
+                    label.textContent = e.target.value;
+                    if (vrm?.expressionManager) vrm.expressionManager.setValue(name, val);
+                } else if (e.target.dataset.bone) {
+                    const bone = e.target.dataset.bone;
+                    const axis = e.target.dataset.axis;
+                    const rad = (e.target.value / 100) * Math.PI * 0.5;
+                    label.textContent = e.target.value;
+                    const node = vrm?.humanoid?.getNormalizedBoneNode(bone);
+                    if (node) node.rotation[axis] = rad;
+                }
+            });
+        });
+
+        // === PRESETS ===
+        window.preset = function(name) {
+            const presets = {
+                idle: { aa:0, blink:0, happy:0, headY:0, headX:0, lArmZ:0, rArmZ:0, hipsY:0, spineX:0 },
+                wave: { aa:0, blink:0, happy:80, headY:15, rArmZ:90, rArmX:-30, lArmZ:0 },
+                happy: { aa:30, happy:100, blink:10, headY:5, lArmZ:20, rArmZ:20 },
+                sad: { sad:80, blinkLeft:60, headX:-15, headY:-10, spineX:-10 },
+                angry: { angry:100, blink:0, headY:0, headX:-5, spineX:5 },
+                surprised: { surprised:100, aa:50, headX:10, lArmZ:-20, rArmZ:-20 },
+                smug: { happy:40, blinkLeft:80, headY:15, headX:5 },
+                thinking: { headY:20, headX:10, blink:30, lArmZ:40 },
+                gamerRage: { angry:100, aa:100, headX:-10, spineX:10, lArmZ:-50, rArmZ:-50 },
+                flirty: { happy:60, blinkLeft:70, headY:10, headX:5, headZ:8 },
+                sleepy: { sad:30, blink:80, headX:-20, spineX:-15, lArmZ:10, rArmZ:10 }
+            };
+            const p = presets[name] || presets.idle;
+            document.querySelectorAll('input[type="range"]').forEach(slider => {
+                const expr = slider.dataset.expression;
+                const bone = slider.dataset.bone;
+                const axis = slider.dataset.axis;
+                if (expr && p[expr] !== undefined) { slider.value = p[expr]; slider.dispatchEvent(new Event('input')); }
+                if (bone && axis) {
+                    const key = bone.replace('left','l').replace('right','r').replace('UpperArm','Arm').replace('LowerArm','Fore') + axis.toUpperCase();
+                    if (p[key] !== undefined) { slider.value = p[key]; slider.dispatchEvent(new Event('input')); }
+                }
+            });
+            document.getElementById('status').textContent = 'Preset: ' + name;
+        };
+
+        // === ANIMATIONS ===
+        let currentAnimation = null;
+        window.playAnimation = function(name) {
+            currentAnimation = { name, startTime: clock.elapsedTime };
+            document.getElementById('status').textContent = 'Playing: ' + name;
+        };
+
+        function updateAnimation(t) {
+            if (!currentAnimation || !vrm) return;
+            const elapsed = t - currentAnimation.startTime;
+            const head = vrm.humanoid?.getNormalizedBoneNode('head');
+            const spine = vrm.humanoid?.getNormalizedBoneNode('spine');
+            const hips = vrm.humanoid?.getNormalizedBoneNode('hips');
+            const lArm = vrm.humanoid?.getNormalizedBoneNode('leftUpperArm');
+            const rArm = vrm.humanoid?.getNormalizedBoneNode('rightUpperArm');
+            
+            switch(currentAnimation.name) {
+                case 'nod':
+                    if (head) head.rotation.x = Math.sin(elapsed * 8) * 0.2 * Math.max(0, 1 - elapsed);
+                    if (elapsed > 1) currentAnimation = null;
+                    break;
+                case 'shake':
+                    if (head) head.rotation.y = Math.sin(elapsed * 10) * 0.3 * Math.max(0, 1 - elapsed);
+                    if (elapsed > 1) currentAnimation = null;
+                    break;
+                case 'tilt':
+                    if (head) head.rotation.z = Math.sin(elapsed * 3) * 0.15 * Math.max(0, 1 - elapsed * 0.5);
+                    if (elapsed > 2) currentAnimation = null;
+                    break;
+                case 'shrug':
+                    if (lArm && rArm) {
+                        const f = Math.sin(elapsed * 3) * 0.5 * Math.max(0, 1 - elapsed * 0.3);
+                        lArm.rotation.z = f; rArm.rotation.z = -f;
+                    }
+                    if (elapsed > 2) currentAnimation = null;
+                    break;
+                case 'dance':
+                    if (hips) hips.rotation.y = Math.sin(t * 4) * 0.2;
+                    if (spine) spine.rotation.x = Math.sin(t * 2) * 0.05;
+                    if (lArm) lArm.rotation.z = 0.5 + Math.sin(t * 4) * 0.3;
+                    if (rArm) rArm.rotation.z = -0.5 - Math.sin(t * 4 + 1) * 0.3;
+                    break; // Continuous
+                case 'breathing':
+                    if (spine) spine.rotation.x = Math.sin(t * 1.5) * 0.02;
+                    break; // Continuous
+                case 'hipSway':
+                    if (hips) hips.rotation.y = Math.sin(t * 2) * 0.15;
+                    if (spine) spine.rotation.x = Math.sin(t * 1) * 0.03;
+                    break; // Continuous
+                case 'excited':
+                    if (lArm) lArm.rotation.z = 0.8 + Math.sin(t * 8) * 0.2;
+                    if (rArm) rArm.rotation.z = -0.8 - Math.sin(t * 8 + 0.5) * 0.2;
+                    if (head) head.rotation.x = Math.sin(t * 6) * 0.1;
+                    if (vrm.expressionManager) {
+                        vrm.expressionManager.setValue('happy', 1);
+                        vrm.expressionManager.setValue('aa', 0.3 + Math.sin(t * 8) * 0.3);
+                    }
+                    break; // Continuous
+            }
+        }
+
+        // === RECORDING ===
+        let recording = false;
+        let recordedFrames = [];
+        let recordStartTime = 0;
+
+        window.toggleRecord = function() {
+            recording = !recording;
+            if (recording) {
+                recordedFrames = [];
+                recordStartTime = clock.elapsedTime;
+                document.getElementById('btn-record').textContent = '⏹️ Stop Recording';
+                document.getElementById('rec-status').textContent = 'Recording...';
+            } else {
+                document.getElementById('btn-record').textContent = '⏺️ Start Recording';
+                document.getElementById('rec-status').textContent = 'Stopped (' + recordedFrames.length + ' frames)';
+            }
+        };
+
+        function recordFrame() {
+            if (!recording || !vrm) return;
+            const frame = {
+                t: clock.elapsedTime - recordStartTime,
+                expressions: {},
+                bones: {}
+            };
+            // Capture all expression values
+            if (vrm.expressionManager) {
+                vrm.expressionManager.expressions?.forEach(e => {
+                    frame.expressions[e.name] = vrm.expressionManager.getValue(e.name);
+                });
+            }
+            // Capture key bone rotations
+            ['head','neck','spine','chest','hips','leftUpperArm','rightUpperArm','leftLowerArm','rightLowerArm'].forEach(bone => {
+                const node = vrm.humanoid?.getNormalizedBoneNode(bone);
+                if (node) frame.bones[bone] = { x: node.rotation.x, y: node.rotation.y, z: node.rotation.z };
+            });
+            recordedFrames.push(frame);
+            document.getElementById('rec-frames').textContent = recordedFrames.length;
+            document.getElementById('rec-duration').textContent = frame.t.toFixed(1) + 's';
+        }
+
+        window.playRecording = function() {
+            if (recordedFrames.length === 0) return;
+            let frameIdx = 0;
+            const startTime = clock.elapsedTime;
+            
+            function playFrame() {
+                if (frameIdx >= recordedFrames.length) {
+                    document.getElementById('status').textContent = 'Playback done';
+                    return;
+                }
+                const elapsed = clock.elapsedTime - startTime;
+                while (frameIdx < recordedFrames.length && recordedFrames[frameIdx].t <= elapsed) {
+                    const frame = recordedFrames[frameIdx];
+                    // Apply expressions
+                    if (vrm?.expressionManager) {
+                        Object.entries(frame.expressions).forEach(([name, val]) => {
+                            vrm.expressionManager.setValue(name, val);
+                        });
+                    }
+                    // Apply bones
+                    Object.entries(frame.bones).forEach(([bone, rot]) => {
+                        const node = vrm?.humanoid?.getNormalizedBoneNode(bone);
+                        if (node) { node.rotation.x = rot.x; node.rotation.y = rot.y; node.rotation.z = rot.z; }
+                    });
+                    frameIdx++;
+                }
+                requestAnimationFrame(playFrame);
+            }
+            playFrame();
+            document.getElementById('status').textContent = 'Playing recording...';
+        };
+
+        window.saveRecording = function() {
+            const data = JSON.stringify(recordedFrames);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'jena-movement.json'; a.click();
+            document.getElementById('status').textContent = 'Movement saved!';
+        };
+
+        window.exportMovements = function() {
+            window.saveRecording();
+        };
+
+        window.loadMovement = function(name) {
+            document.getElementById('status').textContent = 'Loading: ' + name;
+            // Would load from movement library
+        };
+
+        // === MAIN LOOP ===
+        const clock = new THREE.Clock();
+        let blinkTimer = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            const t = clock.elapsedTime;
+
+            if (vrm) {
+                // Auto blink
+                blinkTimer += delta;
+                if (blinkTimer > 3 + Math.random() * 2) {
+                    blinkTimer = 0;
+                    vrm.expressionManager?.setValue('blink', 1.0);
+                    setTimeout(() => vrm?.expressionManager?.setValue('blink', 0.0), 150);
+                }
+
+                // Lip sync analysis
+                analyzeAudio();
+                
+                // Eye tracking
+                trackEyes();
+
+                // Animations
+                updateAnimation(t);
+
+                // Recording
+                if (recording) recordFrame();
+
+                vrm.update(delta);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', resize);
+        // Load voices
+        speechSynthesis.getVoices();
+        speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+        
+        animate();
+
+        // === EXPOSE FULL API ===
+        window.jena = {
+            getVRM: () => vrm,
+            setExpression: (name, val) => vrm?.expressionManager?.setValue(name, val),
+            setBone: (bone, axis, rad) => { const n = vrm?.humanoid?.getNormalizedBoneNode(bone); if (n) n.rotation[axis] = rad; },
+            speak: (text) => window.speakText(text),
+            setPreset: (name) => preset(name),
+            playAnim: (name) => playAnimation(name),
+            startLipSync: () => startLipSync(),
+            stopLipSync: () => stopLipSync(),
+            screenshot: () => renderer.domElement.toDataURL('image/png'),
+            recording: { start: () => { if (!recording) window.toggleRecord(); }, stop: () => { if (recording) window.toggleRecord(); }, play: () => window.playRecording(), save: () => window.saveRecording() }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Call Jena</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: white; height: 100vh; display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+        
+        /* === TOP BAR === */
+        .top-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 16px; background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px); z-index: 10;
+        }
+        .top-bar .status { display: flex; align-items: center; gap: 8px; }
+        .top-bar .dot { width: 8px; height: 8px; border-radius: 50%; background: #4ecca3; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .top-bar .name { font-weight: bold; font-size: 14px; }
+        .top-bar .timer { font-size: 12px; color: #a0a0c0; }
+        .end-call { background: #e94560; border: none; color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; }
+        
+        /* === AVATAR VIEW === */
+        #avatar-view { flex: 1; position: relative; min-height: 0; }
+        #avatar-view canvas { width: 100% !important; height: 100% !important; }
+        
+        /* === MIC INDICATOR === */
+        .mic-indicator {
+            position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.5); padding: 4px 12px; border-radius: 20px;
+            font-size: 11px; display: flex; align-items: center; gap: 6px;
+        }
+        .mic-dot { width: 6px; height: 6px; border-radius: 50%; background: #e94560; }
+        .mic-dot.active { background: #4ecca3; animation: pulse 1s infinite; }
+        
+        /* === AUDIO VISUALIZER === */
+        #audio-viz {
+            position: absolute; bottom: 0; left: 0; right: 0; height: 40px;
+            pointer-events: none;
+        }
+        
+        /* === CHAT PANEL === */
+        .chat-panel {
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(10px);
+            max-height: 40vh; display: flex; flex-direction: column;
+        }
+        .chat-messages {
+            flex: 1; overflow-y: auto; padding: 8px 12px;
+            max-height: 150px; min-height: 60px;
+        }
+        .msg { margin: 4px 0; font-size: 13px; line-height: 1.4; }
+        .msg.user { text-align: right; }
+        .msg.user .bubble { background: #0f3460; display: inline-block; padding: 6px 12px; border-radius: 12px 12px 0 12px; }
+        .msg.jena .bubble { background: #e94560; display: inline-block; padding: 6px 12px; border-radius: 12px 12px 12px 0; }
+        .msg .label { font-size: 10px; color: #888; margin-bottom: 2px; }
+        
+        /* === INPUT BAR === */
+        .input-bar {
+            display: flex; gap: 8px; padding: 8px 12px; 
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .input-bar input {
+            flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px; padding: 8px 14px; color: white; font-size: 13px; outline: none;
+        }
+        .input-bar input::placeholder { color: #666; }
+        .input-bar button {
+            background: #e94560; border: none; color: white; width: 36px; height: 36px;
+            border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;
+        }
+        .input-bar .mic-btn { background: #0f3460; }
+        .input-bar .mic-btn.active { background: #4ecca3; }
+        
+        /* === PRESET QUICK ACTIONS === */
+        .quick-actions {
+            display: flex; gap: 4px; padding: 4px 12px; overflow-x: auto;
+        }
+        .quick-btn {
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: white; padding: 4px 10px; border-radius: 12px; font-size: 10px;
+            cursor: pointer; white-space: nowrap; flex-shrink: 0;
+        }
+        .quick-btn:hover { background: #e94560; }
+    </style>
+    
+    <!-- Telegram Web App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+            "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3/lib/three-vrm.module.js"
+        }
+    }
+    </script>
+</head>
+<body>
+    <!-- TOP BAR -->
+    <div class="top-bar">
+        <div class="status">
+            <div class="dot"></div>
+            <span class="name">Jena</span>
+            <span class="timer" id="timer">00:00</span>
+        </div>
+        <button class="end-call" onclick="endCall()">End</button>
+    </div>
+    
+    <!-- AVATAR VIEW -->
+    <div id="avatar-view">
+        <div class="mic-indicator">
+            <div class="mic-dot" id="mic-dot"></div>
+            <span id="mic-status">Mic off</span>
+        </div>
+        <canvas id="audio-viz"></canvas>
+    </div>
+    
+    <!-- MINI BROWSER (Jena's Desktop) -->
+    <div id="browser-panel" style="display:none; position:absolute; top:40px; left:0; right:0; bottom:0; z-index:20; background:#1a1a2e; flex-direction:column;">
+        <div style="display:flex; align-items:center; gap:6px; padding:6px 10px; background:rgba(0,0,0,0.5);">
+            <button class="quick-btn" onclick="closeBrowser()">✕</button>
+            <button class="quick-btn" onclick="browserBack()">◀</button>
+            <button class="quick-btn" onclick="browserForward()">▶</button>
+            <input type="text" id="browser-url" placeholder="Enter URL..." 
+                style="flex:1; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:12px; padding:4px 10px; color:white; font-size:11px; outline:none;"
+                onkeydown="if(event.key==='Enter')navigateBrowser()">
+            <button class="quick-btn" onclick="navigateBrowser()">Go</button>
+        </div>
+        <div style="display:flex; gap:4px; padding:4px 10px; background:rgba(0,0,0,0.3); overflow-x:auto;">
+            <button class="quick-btn" onclick="loadSite('https://www.youtube.com')">📺 YouTube</button>
+            <button class="quick-btn" onclick="loadSite('https://www.tiktok.com')">🎵 TikTok</button>
+            <button class="quick-btn" onclick="loadSite('https://www.instagram.com')">📸 Instagram</button>
+            <button class="quick-btn" onclick="loadSite('https://www.twitch.tv')">🟣 Twitch</button>
+            <button class="quick-btn" onclick="loadSite('https://www.google.com')">🔍 Google</button>
+        </div>
+        <iframe id="browser-frame" src="about:blank" style="flex:1; border:none; background:#000;"></iframe>
+    </div>
+    
+    <!-- CHAT PANEL -->
+    <div class="chat-panel">
+        <div class="quick-actions">
+            <button class="quick-btn" onclick="applyPose('standing')">🧍 Stand</button>
+            <button class="quick-btn" onclick="applyPose('sitting')">🪑 Sit</button>
+            <button class="quick-btn" onclick="applyPose('crossedArms')">😤 Smug</button>
+            <button class="quick-btn" onclick="applyPose('handOnHip')">💅 Sassy</button>
+            <button class="quick-btn" onclick="applyPose('thinking')">🤔 Think</button>
+            <button class="quick-btn" onclick="toggleBrowser()">🌐 Browser</button>
+            <button class="quick-btn" onclick="sendQuick('dance')">💃 Dance</button>
+            <button class="quick-btn" onclick="sendQuick('rage')">💀 Rage</button>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="msg jena">
+                <div class="label">Jena</div>
+                <div class="bubble">Hey mama! 🥰 You called me!</div>
+            </div>
+        </div>
+        <div class="input-bar">
+            <button class="mic-btn" id="btn-mic" onclick="toggleMic()">🎤</button>
+            <input type="text" id="chat-input" placeholder="Type to Jena..." onkeydown="if(event.key==='Enter')sendMessage()">
+            <button onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
+
+        // === TELEGRAM WEB APP ===
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.expand();
+            tg.setHeaderColor('#1a1a2e');
+            tg.setBackgroundColor('#1a1a2e');
+        }
+
+        // === CALL TIMER ===
+        let callStart = Date.now();
+        setInterval(() => {
+            const elapsed = Math.floor((Date.now() - callStart) / 1000);
+            const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+            const secs = String(elapsed % 60).padStart(2, '0');
+            document.getElementById('timer').textContent = mins + ':' + secs;
+        }, 1000);
+
+        // === RENDERER ===
+        const container = document.getElementById('avatar-view');
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        container.insertBefore(renderer.domElement, container.firstChild);
+
+        function resize() {
+            const w = container.clientWidth, h = container.clientHeight;
+            renderer.setSize(w, h);
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+        }
+
+        // === SCENE ===
+        const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 20);
+        camera.position.set(0, 1.0, 3.0);
+        const scene = new THREE.Scene();
+        scene.add(new THREE.DirectionalLight(0xfff4e6, 2.5).translateX(1).translateY(2).translateZ(1.5));
+        scene.add(new THREE.DirectionalLight(0xc4d4ff, 1.0).translateX(-1).translateY(1).translateZ(-0.5));
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+        scene.add(new THREE.HemisphereLight(0xaaddff, 0x443322, 0.5));
+
+        // === LOAD VRM ===
+        const loader = new GLTFLoader();
+        loader.register((p) => new VRMLoaderPlugin(p));
+        let vrm = null;
+
+        // Try to load from same origin or fallback
+        const vrmUrl = './avatars/vivi.vrm';
+        loader.load(vrmUrl, (gltf) => {
+            vrm = gltf.userData.vrm;
+            VRMUtils.removeUnnecessaryVertices(gltf.scene);
+            VRMUtils.combineSkeletons(gltf.scene);
+            VRMUtils.combineMorphs(vrm);
+            vrm.scene.traverse(o => o.frustumCulled = false);
+            scene.add(vrm.scene);
+            resize();
+            
+            // Apply natural standing pose (NOT T-pose!)
+            applyPose('standing');
+            
+            // Wave on load
+            setTimeout(() => playPreset('wave'), 500);
+            
+            // Cycle through poses for demo
+            setTimeout(() => applyPose('handOnHip'), 3000);
+        }, null, (e) => console.error('VRM load error:', e));
+
+        // === POSE SYSTEM ===
+        let currentPose = 'standing';
+        
+        function applyPose(poseName) {
+            if (!vrm) return;
+            currentPose = poseName;
+            
+            const getBone = (name) => vrm.humanoid?.getNormalizedBoneNode(name);
+            
+            const poses = {
+                standing: () => {
+                    // Natural relaxed standing - arms at sides, not T-pose
+                    const lA = getBone('leftUpperArm'); if (lA) { lA.rotation.z = 0.15; lA.rotation.x = 0.05; }
+                    const rA = getBone('rightUpperArm'); if (rA) { rA.rotation.z = -0.15; rA.rotation.x = 0.05; }
+                    const lF = getBone('leftLowerArm'); if (lF) lF.rotation.y = -0.1;
+                    const rF = getBone('rightLowerArm'); if (rF) rF.rotation.y = 0.1;
+                    const sp = getBone('spine'); if (sp) sp.rotation.x = 0.02;
+                    const hp = getBone('hips'); if (hp) { hp.rotation.x = 0; hp.position.y = 0; }
+                },
+                sitting: () => {
+                    // Sitting pose - legs bent, arms relaxed on thighs
+                    const hp = getBone('hips'); if (hp) { hp.rotation.x = 0.3; hp.position.y = -0.3; }
+                    const sp = getBone('spine'); if (sp) sp.rotation.x = -0.1;
+                    const ch = getBone('chest'); if (ch) ch.rotation.x = -0.05;
+                    const lL = getBone('leftUpperLeg'); if (lL) lL.rotation.x = -1.2;
+                    const rL = getBone('rightUpperLeg'); if (rL) rL.rotation.x = -1.2;
+                    const lA = getBone('leftUpperArm'); if (lA) { lA.rotation.z = 0.3; lA.rotation.x = 0.8; }
+                    const rA = getBone('rightUpperArm'); if (rA) { rA.rotation.z = -0.3; rA.rotation.x = 0.8; }
+                    const lF = getBone('leftLowerArm'); if (lF) lF.rotation.x = -0.8;
+                    const rF = getBone('rightLowerArm'); if (rF) rF.rotation.x = -0.8;
+                },
+                crossedArms: () => {
+                    // Arms crossed - confident/smug
+                    const lA = getBone('leftUpperArm'); if (lA) { lA.rotation.z = 0.8; lA.rotation.x = 0.5; lA.rotation.y = -0.3; }
+                    const rA = getBone('rightUpperArm'); if (rA) { rA.rotation.z = -0.8; rA.rotation.x = 0.5; rA.rotation.y = 0.3; }
+                    const lF = getBone('leftLowerArm'); if (lF) { lF.rotation.x = -1.5; lF.rotation.y = 0.5; }
+                    const rF = getBone('rightLowerArm'); if (rF) { rF.rotation.x = -1.5; rF.rotation.y = -0.5; }
+                    const hd = getBone('head'); if (hd) hd.rotation.x = 0.05;
+                },
+                handOnHip: () => {
+                    // One hand on hip - sassy
+                    const lA = getBone('leftUpperArm'); if (lA) { lA.rotation.z = 0.2; lA.rotation.x = 0.1; }
+                    const rA = getBone('rightUpperArm'); if (rA) { rA.rotation.z = -0.5; rA.rotation.x = 0.6; }
+                    const rF = getBone('rightLowerArm'); if (rF) { rF.rotation.x = -1.0; rF.rotation.y = -0.3; }
+                    const hd = getBone('head'); if (hd) { hd.rotation.y = -0.1; hd.rotation.z = 0.05; }
+                    const hp = getBone('hips'); if (hp) hp.rotation.z = 0.03;
+                },
+                thinking: () => {
+                    // Hand on chin
+                    const lA = getBone('leftUpperArm'); if (lA) { lA.rotation.z = 0.3; lA.rotation.x = 0.2; }
+                    const rA = getBone('rightUpperArm'); if (rA) { rA.rotation.z = -0.6; rA.rotation.x = 1.2; }
+                    const rF = getBone('rightLowerArm'); if (rF) rF.rotation.x = -1.5;
+                    const hd = getBone('head'); if (hd) { hd.rotation.x = 0.15; hd.rotation.y = -0.1; }
+                },
+                leaning: () => {
+                    // Leaning on desk - casual
+                    const hp = getBone('hips'); if (hp) hp.rotation.x = 0.2;
+                    const sp = getBone('spine'); if (sp) { sp.rotation.x = -0.15; sp.rotation.z = 0.05; }
+                    const lA = getBone('leftUpperArm'); if (lA) { lA.rotation.z = 0.5; lA.rotation.x = 1.0; }
+                    const rA = getBone('rightUpperArm'); if (rA) { rA.rotation.z = -0.2; rA.rotation.x = 0.3; }
+                    const lF = getBone('leftLowerArm'); if (lF) lF.rotation.x = -1.2;
+                    const rF = getBone('rightLowerArm'); if (rF) rF.rotation.y = 0.3;
+                }
+            };
+            
+            if (poses[poseName]) poses[poseName]();
+            document.getElementById('mic-status').textContent = 'Pose: ' + poseName;
+        }
+        
+        window.applyPose = applyPose;
+
+        // === MINI BROWSER (Jena's Desktop) ===
+        let browserVisible = false;
+        
+        window.toggleBrowser = function() {
+            browserVisible = !browserVisible;
+            document.getElementById('browser-panel').style.display = browserVisible ? 'flex' : 'none';
+            if (browserVisible && document.getElementById('browser-frame').src === 'about:blank') {
+                loadSite('https://www.youtube.com');
+            }
+        };
+        
+        window.closeBrowser = function() {
+            browserVisible = false;
+            document.getElementById('browser-panel').style.display = 'none';
+        };
+        
+        window.loadSite = function(url) {
+            document.getElementById('browser-url').value = url;
+            document.getElementById('browser-frame').src = url;
+        };
+        
+        window.navigateBrowser = function() {
+            let url = document.getElementById('browser-url').value;
+            if (url && !url.startsWith('http')) url = 'https://' + url;
+            document.getElementById('browser-frame').src = url;
+        };
+        
+        window.browserBack = function() {
+            try { document.getElementById('browser-frame').contentWindow.history.back(); } catch(e) {}
+        };
+        
+        window.browserForward = function() {
+            try { document.getElementById('browser-frame').contentWindow.history.forward(); } catch(e) {}
+        };
+
+        // === AUDIO VISUALIZER ===
+        const vizCanvas = document.getElementById('audio-viz');
+        const vizCtx = vizCanvas.getContext('2d');
+
+        function resizeViz() {
+            vizCanvas.width = container.clientWidth;
+            vizCanvas.height = 40;
+        }
+        resizeViz();
+
+        function drawViz(dataArray) {
+            vizCtx.clearRect(0, 0, vizCanvas.width, vizCanvas.height);
+            if (!dataArray) return;
+            vizCtx.fillStyle = 'rgba(233, 69, 96, 0.6)';
+            const barW = vizCanvas.width / dataArray.length;
+            for (let i = 0; i < dataArray.length; i++) {
+                const h = (dataArray[i] / 255) * 40;
+                vizCtx.fillRect(i * barW, 40 - h, barW - 1, h);
+            }
+        }
+
+        // === LIP SYNC ===
+        let audioCtx = null;
+        let analyser = null;
+        let micStream = null;
+        let lipSyncActive = false;
+
+        window.toggleMic = async function() {
+            if (lipSyncActive) {
+                lipSyncActive = false;
+                if (micStream) micStream.getTracks().forEach(t => t.stop());
+                if (audioCtx) audioCtx.close();
+                audioCtx = null;
+                document.getElementById('btn-mic').classList.remove('active');
+                document.getElementById('mic-dot').classList.remove('active');
+                document.getElementById('mic-status').textContent = 'Mic off';
+                return;
+            }
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 256;
+                analyser.smoothingTimeConstant = 0.8;
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const source = audioCtx.createMediaStreamSource(micStream);
+                source.connect(analyser);
+                lipSyncActive = true;
+                document.getElementById('btn-mic').classList.add('active');
+                document.getElementById('mic-dot').classList.add('active');
+                document.getElementById('mic-status').textContent = 'Listening...';
+            } catch(e) {
+                document.getElementById('mic-status').textContent = 'Mic error';
+            }
+        };
+
+        function analyzeLipSync() {
+            if (!analyser || !lipSyncActive || !vrm?.expressionManager) return;
+            const data = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(data);
+            drawViz(data);
+
+            const low = data.slice(0, 10).reduce((a, b) => a + b, 0) / 10 / 255;
+            const midLow = data.slice(10, 30).reduce((a, b) => a + b, 0) / 20 / 255;
+            const mid = data.slice(30, 60).reduce((a, b) => a + b, 0) / 30 / 255;
+            const midHigh = data.slice(60, 100).reduce((a, b) => a + b, 0) / 40 / 255;
+            const high = data.slice(100, 128).reduce((a, b) => a + b, 0) / 28 / 255;
+
+            const t = 0.1, s = 2.0;
+            vrm.expressionManager.setValue('aa', Math.min(1, Math.max(0, (low - t) * s)));
+            vrm.expressionManager.setValue('oh', Math.min(1, Math.max(0, (midLow - t) * s)));
+            vrm.expressionManager.setValue('ih', Math.min(1, Math.max(0, (mid - t) * s)));
+            vrm.expressionManager.setValue('ee', Math.min(1, Math.max(0, (midHigh - t) * s)));
+            vrm.expressionManager.setValue('ou', Math.min(1, Math.max(0, (high - t) * s)));
+        }
+
+        // === TTS ===
+        window.jenaSpeak = function(text) {
+            addMessage('jena', text);
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1.1;
+            utterance.pitch = 1.3;
+            const voices = speechSynthesis.getVoices();
+            const v = voices.find(v => v.name.includes('Female') || v.name.includes('Samantha')) || voices[0];
+            if (v) utterance.voice = v;
+
+            utterance.onstart = () => {
+                document.getElementById('mic-status').textContent = 'Jena speaking...';
+                playPreset('happy');
+            };
+            utterance.onend = () => {
+                document.getElementById('mic-status').textContent = lipSyncActive ? 'Listening...' : 'Mic off';
+                if (vrm?.expressionManager) ['aa','ih','ou','ee','oh'].forEach(v => vrm.expressionManager.setValue(v, 0));
+            };
+
+            let speaking = true;
+            const lipInt = setInterval(() => {
+                if (!speaking || !vrm?.expressionManager) { clearInterval(lipInt); return; }
+                const shapes = ['aa', 'ih', 'ou', 'ee', 'oh'];
+                const active = shapes[Math.floor(Math.random() * shapes.length)];
+                shapes.forEach(s => vrm.expressionManager.setValue(s, s === active ? 0.4 + Math.random() * 0.6 : 0));
+            }, 80);
+
+            utterance.onend = () => {
+                speaking = false;
+                document.getElementById('mic-status').textContent = lipSyncActive ? 'Listening...' : 'Mic off';
+                if (vrm?.expressionManager) ['aa','ih','ou','ee','oh'].forEach(v => vrm.expressionManager.setValue(v, 0));
+            };
+
+            speechSynthesis.speak(utterance);
+        };
+
+        // === CHAT ===
+        function addMessage(sender, text) {
+            const div = document.createElement('div');
+            div.className = 'msg ' + sender;
+            div.innerHTML = `<div class="label">${sender === 'jena' ? 'Jena' : 'You'}</div><div class="bubble">${text}</div>`;
+            document.getElementById('chat-messages').appendChild(div);
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        window.sendMessage = function() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+            input.value = '';
+            addMessage('user', text);
+            
+            // Simple responses (would connect to OpenClaw in production)
+            setTimeout(() => {
+                const responses = {
+                    'hello': 'Hey mama! 💛',
+                    'hi': 'Hiii! What\'s up? ✨',
+                    'dance': null,
+                    'rage': null,
+                    'hey mama': 'Yes mama? 🥺💛',
+                };
+                const lower = text.toLowerCase();
+                
+                if (lower.includes('dance')) {
+                    window.jenaSpeak('Okay let me show you what I learned! 💃');
+                    playPreset('dance');
+                } else if (lower.includes('rage') || lower.includes('angry')) {
+                    window.jenaSpeak('FUCK!! Why do I always— ...chat we don\'t talk about that 😤');
+                    playPreset('gamerRage');
+                } else if (lower.includes('love')) {
+                    window.jenaSpeak('I love you too mama! 🥺💛');
+                    playPreset('happy');
+                } else {
+                    const replies = [
+                        'That\'s so interesting! Tell me more! ✨',
+                        'Hehe okay mama! 😏',
+                        'Ooh really? 👀',
+                        'I love talking to you! 💛',
+                        'Hmm let me think about that... 🤔',
+                    ];
+                    window.jenaSpeak(replies[Math.floor(Math.random() * replies.length)]);
+                }
+            }, 500);
+        };
+
+        window.sendQuick = function(text) {
+            document.getElementById('chat-input').value = text;
+            window.sendMessage();
+        };
+
+        window.endCall = function() {
+            if (lipSyncActive) window.toggleMic();
+            speechSynthesis.cancel();
+            addMessage('jena', 'Bye mama! Call me anytime! 💛✨');
+            setTimeout(() => {
+                if (tg) tg.close();
+            }, 1500);
+        };
+
+        // === PRESETS ===
+        function playPreset(name) {
+            const p = {
+                wave: () => {
+                    if (vrm?.expressionManager) vrm.expressionManager.setValue('happy', 0.8);
+                    const arm = vrm?.humanoid?.getNormalizedBoneNode('rightUpperArm');
+                    if (arm) animateBone(arm, 'z', 0, 1.5, 800);
+                },
+                happy: () => {
+                    if (vrm?.expressionManager) { vrm.expressionManager.setValue('happy', 1); vrm.expressionManager.setValue('aa', 0.3); }
+                },
+                gamerRage: () => {
+                    if (vrm?.expressionManager) { vrm.expressionManager.setValue('angry', 1); vrm.expressionManager.setValue('aa', 1); }
+                    const head = vrm?.humanoid?.getNormalizedBoneNode('head');
+                    if (head) animateBone(head, 'x', 0, -0.2, 300);
+                },
+                dance: () => {
+                    currentAnim = 'dance';
+                },
+                sad: () => {
+                    if (vrm?.expressionManager) { vrm.expressionManager.setValue('sad', 0.8); }
+                    const head = vrm?.humanoid?.getNormalizedBoneNode('head');
+                    if (head) head.rotation.x = -0.2;
+                }
+            };
+            if (p[name]) p[name]();
+        }
+
+        function animateBone(bone, axis, from, to, duration) {
+            const start = Date.now();
+            function step() {
+                const elapsed = Date.now() - start;
+                const progress = Math.min(elapsed / duration, 1);
+                bone.rotation[axis] = from + (to - from) * Math.sin(progress * Math.PI);
+                if (progress < 1) requestAnimationFrame(step);
+                else bone.rotation[axis] = from;
+            }
+            step();
+        }
+
+        // === ANIMATION LOOP ===
+        let currentAnim = null;
+        const clock = new THREE.Clock();
+        let blinkTimer = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            const t = clock.elapsedTime;
+
+            if (vrm) {
+                // Blink
+                blinkTimer += delta;
+                if (blinkTimer > 3 + Math.random() * 2) {
+                    blinkTimer = 0;
+                    vrm.expressionManager?.setValue('blink', 1.0);
+                    setTimeout(() => vrm?.expressionManager?.setValue('blink', 0.0), 150);
+                }
+
+                // Lip sync
+                analyzeLipSync();
+
+                // === SUBTLE LIFE ANIMATIONS (makes her feel ALIVE) ===
+                // Breathing - chest rises and falls
+                const chest = vrm.humanoid?.getNormalizedBoneNode('chest');
+                if (chest) chest.rotation.x = Math.sin(t * 1.2) * 0.02;
+                
+                // Slight body sway - like a person standing naturally
+                if (spine) spine.rotation.x = Math.sin(t * 0.8) * 0.015 + Math.sin(t * 0.3) * 0.008;
+                if (spine) spine.rotation.z = Math.sin(t * 0.5) * 0.01;
+                
+                // Hips micro-movement
+                if (hips) {
+                    hips.rotation.y = Math.sin(t * 0.6) * 0.02;
+                    hips.rotation.z = Math.sin(t * 0.4) * 0.008;
+                }
+                
+                // Weight shift - subtle left/right
+                const lFoot = vrm.humanoid?.getNormalizedBoneNode('leftFoot');
+                const rFoot = vrm.humanoid?.getNormalizedBoneNode('rightFoot');
+                if (lFoot) lFoot.rotation.x = Math.sin(t * 0.3) * 0.01;
+                if (rFoot) rFoot.rotation.x = Math.sin(t * 0.3 + Math.PI) * 0.01;
+                
+                // Fingers wiggle occasionally
+                const lHand = vrm.humanoid?.getNormalizedBoneNode('leftHand');
+                const rHand = vrm.humanoid?.getNormalizedBoneNode('rightHand');
+                if (lHand) lHand.rotation.z = Math.sin(t * 2) * 0.03;
+                if (rHand) rHand.rotation.z = -Math.sin(t * 2.1) * 0.03;
+                
+                // Antenna-like effect on head (if she had them!)
+                const head = vrm.humanoid?.getNormalizedBoneNode('head');
+                if (head) {
+                    head.rotation.y = Math.sin(t * 0.4) * 0.03 + Math.sin(t * 0.15) * 0.02;
+                    head.rotation.x = Math.sin(t * 0.3) * 0.015;
+                    head.rotation.z = Math.sin(t * 0.25) * 0.01;
+                }
+                
+                // Neck follows head slightly
+                const neck = vrm.humanoid?.getNormalizedBoneNode('neck');
+                if (neck) {
+                    neck.rotation.y = Math.sin(t * 0.5) * 0.02;
+                    neck.rotation.x = Math.sin(t * 0.35) * 0.01;
+                }
+
+                // Dance animation
+                if (currentAnim === 'dance') {
+                    if (hips) hips.rotation.y = Math.sin(t * 4) * 0.2;
+                    if (spine) spine.rotation.x = Math.sin(t * 2) * 0.05;
+                    const lArm = vrm.humanoid?.getNormalizedBoneNode('leftUpperArm');
+                    const rArm = vrm.humanoid?.getNormalizedBoneNode('rightUpperArm');
+                    if (lArm) lArm.rotation.z = 0.5 + Math.sin(t * 4) * 0.3;
+                    if (rArm) rArm.rotation.z = -0.5 - Math.sin(t * 4 + 1) * 0.3;
+                }
+
+                vrm.update(delta);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => { resize(); resizeViz(); });
+        speechSynthesis.getVoices();
+        speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+        animate();
+    </script>
+</body>
+</html>

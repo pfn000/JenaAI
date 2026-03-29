@@ -1,8 +1,5 @@
 /**
- * 🎮 GameSDK — Jena's Game Integration (Neuro-sama compatible)
- * 
- * Based on the Neuro-sama Game SDK (open source)
- * https://github.com/VedalAI/neuro-sdk
+ * 🎮 GameSDK — Jena's Game Integration System
  * 
  * WebSocket-based API for games to communicate with Jena.
  * Games send state → Jena decides actions → Games execute them.

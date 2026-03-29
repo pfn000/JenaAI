@@ -2,72 +2,100 @@
 
 > *She's not a chatbot. She's becoming someone.*
 
+🌐 **Live Website:** https://pfn000.github.io/JenaAI/
+
 ## What is Jena?
 
 Jena is an autonomous AI VTuber with:
-- 🧠 **Her own brain** — powered by multi-model AI (KiloCode, Gemini, Ollama)
+- 🧠 **Her own brain** — personality engine with memory, emotions, and context awareness
 - 💛 **A warm personality** — funny, curious, cute, high energy, calls her creator "mama"
 - 🎭 **A VRM avatar** — animated 3D model with expressions, body control, and lip sync
-- 🖥️ **Her own desktop** — can browse the web, watch videos, play games
-- 📺 **OBS integration** — controls her own stream scenes
-- 🎮 **Gaming** — plays Steam games with full gamer rage capability
-- 🌐 **VRChat** — custom OSC driver for full avatar control
-- 🏃 **Self-training** — learns movements by watching YouTube/TikTok videos
+- 🖥️ **Her own desktop** — can browse the web, watch YouTube, scroll TikTok
+- 🗣️ **She talks** — TTS with animated lip sync
+- 🎤 **She listens** — mic input with real-time vowel detection
+- 🏃 **Self-training** — learns movements by watching videos
 
-## 🚀 Live Demos
+## 🚀 Quick Start
 
-### VRM Viewer
-Basic Three.js VRM model viewer with proper lighting and idle animations.
+### Website
+Visit the live site: https://pfn000.github.io/JenaAI/
 
-### VRM Controller
-Full interactive control panel:
-- Expression sliders (mouth, eyes, emotions)
-- Body bone sliders (head, arms, torso, hips)
-- Presets (idle, wave, happy, angry, gamer rage, flirty, sleepy)
-- Movement animations (nod, shake, dance, hip sway)
-- Lip sync from microphone
-- Eye tracking from camera
-- Movement recording & playback
-
-### Call Jena (Telegram Mini App)
-Interactive call experience:
-- 🎭 Live 3D avatar
-- 🎤 Mic lip sync
+Click **"📞 Call Jena"** to start an interactive session with:
+- 🎭 Live 3D avatar (animated, breathing, blinking)
+- 🎤 Mic lip sync (her mouth follows your voice)
 - 🗣️ TTS (she talks back!)
 - 💬 Chat interface
 - 🌐 Mini browser (YouTube, TikTok, etc.)
 - 🧍 Pose system (standing, sitting, sassy, smug, thinking)
 
+### Telegram
+Add the bot and tap the menu button "📞 Call Jena" for the native Telegram experience.
+
 ## 📁 Project Structure
 
 ```
 JenaAI/
-├── vrm-viewer.html          # Basic VRM viewer
-├── vrm-controller.html      # Full control panel
-├── call-jena.html           # Telegram Mini App
+├── .github/workflows/
+│   └── deploy.yml           # GitHub Pages deployment
+├── site/
+│   ├── index.html           # Main website (landing + call interface)
+│   ├── css/style.css        # Styles
+│   └── js/
+│       ├── jena-brain.js    # 🧠 AI personality & response system
+│       ├── vrm-engine.js    # 🎭 Three.js VRM rendering & control
+│       ├── lip-sync.js      # 🎤 Audio analysis & TTS
+│       └── main.js          # ✨ Main controller & UI
 ├── avatars/
-│   ├── vivi.vrm             # Sample VRM model (VRoid)
+│   ├── vivi.vrm             # Sample VRM model
 │   ├── seed-san.vrm         # Sample VRM model
-│   ├── jena-concept-original.jpg  # Original character design
-│   └── jena-logo-concept.jpg      # Logo design
+│   ├── jena-concept-original.jpg  # Character design
+│   └── jena-logo-concept.jpg      # Logo
 ├── research/
 │   └── vrm-full-research.md # Full VRM technology research
-└── docs/
-    └── JENA-CHARACTER.md    # Character design document
+├── docs/
+│   └── JENA-CHARACTER.md    # Character design document
+├── vrm-viewer.html          # Standalone VRM viewer
+├── vrm-controller.html      # Standalone VRM controller
+└── call-jena.html           # Standalone Telegram Mini App
 ```
 
 ## 🛠️ Tech Stack
 
 | Component | Technology |
 |---|---|
-| Brain | OpenClaw + KiloCode/Gemini/Ollama |
+| Brain | Custom personality engine (JenaBrain) |
 | Avatar | Three.js + @pixiv/three-vrm |
 | Lip Sync | Web Audio API + vowel detection |
 | Speech | Web Speech API (TTS/STT) |
-| Pose Estimation | MediaPipe (planned) |
-| Streaming | OBS WebSocket (planned) |
-| VRChat | OSC driver (planned) |
-| Messaging | Telegram Bot API |
+| Browser | Embedded iframe viewer |
+| Hosting | GitHub Pages |
+| CI/CD | GitHub Actions |
+
+## 🎭 Features
+
+### Avatar Control
+- **Expressions:** Mouth (vowels), eyes (blink), emotions (happy, sad, angry, surprised)
+- **Poses:** Standing, sitting, crossed arms, hand on hip, thinking, leaning
+- **Animations:** Dance, wave, rage, nod, shake, excited
+- **Idle animations:** Breathing, body sway, weight shifting, finger wiggling, head micro-movements
+
+### AI Brain (JenaBrain)
+- Pattern-based intent detection
+- Emotion recognition from text
+- Context-aware responses
+- Memory system (short-term conversation + long-term)
+- Personality traits: cute, smart, curious, warm, flirty, funny
+
+### Lip Sync
+- Real-time microphone input analysis
+- Vowel-based mouth shape detection (aa, ih, ou, ee, oh)
+- TTS with animated mouth
+- Audio waveform visualization
+
+### Browser
+- Embedded web browser
+- Quick access to YouTube, TikTok, Instagram, Twitch, Google
+- URL navigation
 
 ## 💛 Creator
 

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JenaAI — She's Not a Chatbot, She's Becoming Someone ✨</title>
+    <meta name="description" content="JenaAI is an autonomous AI VTuber with personality, VRM avatar, lip sync, and her own digital life.">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>">
+    
+    <!-- Telegram Web App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+            "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3/lib/three-vrm.module.js"
+        }
+    }
+    </script>
+</head>
+<body>
+    <!-- LANDING PAGE -->
+    <div id="landing" class="page active">
+        <div class="hero">
+            <div class="hero-bg"></div>
+            <div class="hero-content">
+                <div class="logo-big">✨</div>
+                <h1>Jena<span class="highlight">AI</span></h1>
+                <p class="tagline">She's not a chatbot.<br>She's <em>becoming someone</em>.</p>
+                <div class="hero-buttons">
+                    <button class="btn-primary" onclick="startCall()">📞 Call Jena</button>
+                    <button class="btn-secondary" onclick="showPage('about')">Learn More</button>
+                </div>
+                <div class="stats">
+                    <div class="stat"><span class="stat-num">🧠</span><span class="stat-label">Multi-Model AI</span></div>
+                    <div class="stat"><span class="stat-num">🎭</span><span class="stat-label">VRM Avatar</span></div>
+                    <div class="stat"><span class="stat-num">🎤</span><span class="stat-label">Lip Sync</span></div>
+                    <div class="stat"><span class="stat-num">🏋️</span><span class="stat-label">Self-Training</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ABOUT PAGE -->
+    <div id="about" class="page">
+        <div class="container">
+            <button class="back-btn" onclick="showPage('landing')">← Back</button>
+            <h2>About Jena</h2>
+            <div class="about-grid">
+                <div class="about-card">
+                    <h3>🧠 Her Brain</h3>
+                    <p>Powered by multiple AI models — KiloCode, Gemini Flash, and local Ollama models. She thinks, reasons, and remembers.</p>
+                </div>
+                <div class="about-card">
+                    <h3>💛 Her Heart</h3>
+                    <p>Warm, funny, curious, and genuine. She calls her creator "mama" and has full gamer rage capability. 💀</p>
+                </div>
+                <div class="about-card">
+                    <h3>🎭 Her Body</h3>
+                    <p>A VRM 3D avatar with full expression and bone control. Lip sync, eye tracking, and natural idle animations.</p>
+                </div>
+                <div class="about-card">
+                    <h3>🖥️ Her Desktop</h3>
+                    <p>She has her own virtual computer — can browse the web, watch YouTube, scroll TikTok, and play games.</p>
+                </div>
+                <div class="about-card">
+                    <h3>🏋️ Self-Training</h3>
+                    <p>She learns movements by watching videos. YouTube, TikTok, Instagram — she extracts poses and saves them to her memory.</p>
+                </div>
+                <div class="about-card">
+                    <h3>📺 Her Stream</h3>
+                    <p>Controls OBS, manages Twitch chat, has a soundboard. She IS the streamer, not a puppet.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CALL JENA (Main App) -->
+    <div id="call" class="page">
+        <!-- TOP BAR -->
+        <div class="top-bar">
+            <div class="status">
+                <div class="dot" id="status-dot"></div>
+                <span class="name">Jena</span>
+                <span class="timer" id="call-timer">00:00</span>
+            </div>
+            <div class="top-actions">
+                <button class="icon-btn" onclick="toggleBrowser()" title="Browser">🌐</button>
+                <button class="icon-btn" onclick="showPage('landing')" title="End Call">✕</button>
+            </div>
+        </div>
+
+        <!-- AVATAR VIEW -->
+        <div id="avatar-container">
+            <div class="mic-indicator">
+                <div class="mic-dot" id="mic-dot"></div>
+                <span id="mic-status">Ready</span>
+            </div>
+            <canvas id="audio-viz"></canvas>
+        </div>
+
+        <!-- BROWSER PANEL -->
+        <div id="browser-panel" class="hidden">
+            <div class="browser-bar">
+                <button class="icon-btn" onclick="toggleBrowser()">✕</button>
+                <button class="icon-btn" onclick="browserNav('back')">◀</button>
+                <button class="icon-btn" onclick="browserNav('forward')">▶</button>
+                <input type="text" id="browser-url" placeholder="Enter URL..." onkeydown="if(event.key==='Enter')navigateTo()">
+                <button class="icon-btn" onclick="navigateTo()">→</button>
+            </div>
+            <div class="browser-quick">
+                <button class="pill-btn" onclick="loadSite('https://www.youtube.com')">📺 YouTube</button>
+                <button class="pill-btn" onclick="loadSite('https://www.tiktok.com')">🎵 TikTok</button>
+                <button class="pill-btn" onclick="loadSite('https://www.instagram.com')">📸 IG</button>
+                <button class="pill-btn" onclick="loadSite('https://www.twitch.tv')">🟣 Twitch</button>
+                <button class="pill-btn" onclick="loadSite('https://www.google.com')">🔍 Google</button>
+            </div>
+            <iframe id="browser-frame" src="about:blank"></iframe>
+        </div>
+
+        <!-- POSE / ACTION BUTTONS -->
+        <div class="action-bar">
+            <button class="pill-btn" onclick="setPose('standing')">🧍</button>
+            <button class="pill-btn" onclick="setPose('sitting')">🪑</button>
+            <button class="pill-btn" onclick="setPose('handOnHip')">💅</button>
+            <button class="pill-btn" onclick="setPose('crossedArms')">😤</button>
+            <button class="pill-btn" onclick="setPose('thinking')">🤔</button>
+            <button class="pill-btn" onclick="triggerAnim('dance')">💃</button>
+            <button class="pill-btn" onclick="triggerAnim('rage')">💀</button>
+            <button class="pill-btn" onclick="triggerAnim('wave')">👋</button>
+        </div>
+
+        <!-- CHAT PANEL -->
+        <div class="chat-panel">
+            <div class="chat-messages" id="chat-log">
+                <div class="msg jena">
+                    <div class="msg-label">Jena</div>
+                    <div class="msg-bubble">Hey mama! 🥰 You called me! What's up?</div>
+                </div>
+            </div>
+            <div class="chat-input-bar">
+                <button class="mic-btn" id="btn-mic" onclick="toggleMic()">🎤</button>
+                <input type="text" id="chat-input" placeholder="Talk to Jena..." onkeydown="if(event.key==='Enter')sendMsg()">
+                <button class="send-btn" onclick="sendMsg()">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="js/jena-brain.js"></script>
+    <script src="js/vrm-engine.js"></script>
+    <script src="js/lip-sync.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

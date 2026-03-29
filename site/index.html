@@ -519,153 +519,49 @@
 
     <!-- LOADING MANAGER -->
     <script>
-    // Load vendor scripts first, then app scripts
-    function loadVendorScripts() {
-        const vendorScripts = ['vendor/three.min.js', 'vendor/OrbitControls.js', 'vendor/GLTFLoader.js', 'vendor/three-vrm.js'];
-        let idx = 0;
-        
-        return new Promise((resolve, reject) => {
-            function loadNext() {
-                if (idx >= vendorScripts.length) { resolve(); return; }
-                const s = document.createElement('script');
-                s.src = vendorScripts[idx];
-                s.onload = () => { console.log('✅ ' + vendorScripts[idx]); idx++; loadNext(); };
-                s.onerror = (e) => { console.error('❌ ' + vendorScripts[idx]); idx++; loadNext(); };
-                document.head.appendChild(s);
-            }
-            loadNext();
-        });
-    }
-    </script>
-    <script>
     const LoadingManager = {
-        steps: [],
-        currentStep: 0,
-        totalSteps: 7,
-        
+        steps: [], totalSteps: 7, currentStep: 0,
         init() {
-            this.steps = [
-                { name: 'Three.js', status: 'pending' },
-                { name: 'OrbitControls', status: 'pending' },
-                { name: 'GLTFLoader', status: 'pending' },
-                { name: 'VRM Plugin', status: 'pending' },
-                { name: 'AI Brain', status: 'pending' },
-                { name: 'VRM Model', status: 'pending' },
-                { name: 'Avatar Ready', status: 'pending' },
-            ];
-            this.render();
-            
-            // Show skip button after 8 seconds
-            setTimeout(() => {
-                document.getElementById('load-skip').style.display = 'inline-block';
-            }, 8000);
+            this.steps = ['Three.js','OrbitControls','GLTFLoader','VRM Plugin','AI Brain','VRM Model','Avatar Ready'];
+            this.log('> Initializing JenaAI...', 'info');
         },
-        
-        setStatus(text) {
-            document.getElementById('load-status').textContent = text;
+        log(text, type) {
+            const el = document.getElementById('terminal-log');
+            if (el) { const d = document.createElement('div'); d.style.color = type==='ok'?'#4ecca3':type==='error'?'#e94560':'#888'; d.textContent = text; el.appendChild(d); el.parentElement.scrollTop = 999; }
         },
-        
-        setProgress(pct) {
-            document.getElementById('load-progress').style.width = pct + '%';
-        },
-        
-        stepComplete(index) {
-            this.steps[index].status = 'done';
-            this.currentStep = index + 1;
-            this.setProgress((this.currentStep / this.totalSteps) * 100);
-            this.render();
-        },
-        
-        stepError(index, error) {
-            this.steps[index].status = 'error';
-            this.steps[index].error = error;
-            this.render();
-        },
-        
-        render() {
-            const container = document.getElementById('load-steps');
-            if (!container) return;
-            container.innerHTML = this.steps.map((s, i) => {
-                const icon = s.status === 'done' ? '✅' : s.status === 'error' ? '❌' : '⏳';
-                const color = s.status === 'done' ? '#4ecca3' : s.status === 'error' ? '#e94560' : 'rgba(255,255,255,0.2)';
-                const extra = s.error ? ' — ' + s.error : '';
-                return '<div style="color:' + color + ';margin:3px 0;">' + icon + ' ' + s.name + extra + '</div>';
-            }).join('');
-        },
-        
-        complete() {
-            this.setProgress(100);
-            setTimeout(() => {
-                const overlay = document.getElementById('loading-overlay');
-                if (overlay) {
-                    overlay.style.transition = 'opacity 0.5s';
-                    overlay.style.opacity = '0';
-                    setTimeout(() => overlay.style.display = 'none', 500);
-                }
-            }, 500);
-        }
+        setStatus(t) { const e = document.getElementById('terminal-status'); if (e) e.textContent = t; },
+        setProgress(p) { const e = document.getElementById('load-progress'); if (e) e.style.width = p+'%'; const p2 = document.getElementById('terminal-pct'); if (p2) p2.textContent = Math.round(p)+'%'; },
+        stepComplete(i) { this.currentStep = i+1; this.setProgress((this.currentStep/this.totalSteps)*100); this.log('[OK] '+this.steps[i], 'ok'); },
+        stepError(i, err) { this.log('[ERR] '+this.steps[i]+': '+err, 'error'); },
+        complete() { this.setProgress(100); setTimeout(()=>{ const o = document.getElementById('loading-overlay'); if(o){o.style.transition='opacity 0.5s';o.style.opacity='0';setTimeout(()=>o.style.display='none',500);} },300); }
     };
+    LoadingManager.init();
     
-    function skipLoading() {
-        const overlay = document.getElementById('loading-overlay');
-        if (overlay) overlay.style.display = 'none';
+    // Load vendor scripts sequentially, then app scripts
+    const vendor = ['vendor/three.min.js','vendor/OrbitControls.js','vendor/GLTFLoader.js','vendor/three-vrm.js'];
+    const apps = ['js/jena-brain.js','js/vrm-engine.js','js/lip-sync.js','js/skill-engine.js','js/main.js'];
+    let vi = 0, ai = 0;
+    
+    function loadVendor() {
+        if (vi >= vendor.length) { LoadingManager.log('> Loading app scripts...', 'info'); loadApp(); return; }
+        const s = document.createElement('script');
+        s.src = vendor[vi];
+        s.onload = () => { LoadingManager.stepComplete(vi); vi++; loadVendor(); };
+        s.onerror = () => { LoadingManager.stepError(vi, 'failed'); vi++; loadVendor(); };
+        document.head.appendChild(s);
+    }
+    function loadApp() {
+        if (ai >= apps.length) return;
+        const s = document.createElement('script');
+        s.src = apps[ai];
+        s.onload = () => { ai++; loadApp(); };
+        s.onerror = () => { console.error('Failed: '+apps[ai]); ai++; loadApp(); };
+        document.head.appendChild(s);
     }
     
-    // Override LoadingManager to use terminal
-    LoadingManager.terminalLog = function(text, type = 'info') {
-        const log = document.getElementById('terminal-log');
-        if (!log) return;
-        const colors = { ok: '#4ecca3', error: '#e94560', info: '#888', loading: '#ffa500' };
-        log.innerHTML += '<div style="color:' + (colors[type] || '#888') + ';">' + text + '</div>';
-        log.parentElement.scrollTop = log.parentElement.scrollHeight;
-    };
-    
-    const origSetStatus = LoadingManager.setStatus.bind(LoadingManager);
-    LoadingManager.setStatus = function(text) {
-        origSetStatus(text);
-        document.getElementById('terminal-status').textContent = text;
-    };
-    
-    const origSetProgress = LoadingManager.setProgress.bind(LoadingManager);
-    LoadingManager.setProgress = function(pct) {
-        origSetProgress(pct);
-        document.getElementById('terminal-pct').textContent = Math.round(pct) + '%';
-    };
-    
-    const origStepComplete = LoadingManager.stepComplete.bind(LoadingManager);
-    LoadingManager.stepComplete = function(index) {
-        origStepComplete(index);
-        const names = ['Three.js', 'OrbitControls', 'GLTFLoader', 'VRM Plugin', 'AI Brain', 'VRM Model', 'Avatar Ready'];
-        this.terminalLog('[OK] ' + (names[index] || 'Step ' + index) + ' loaded', 'ok');
-    };
-    
-    const origStepError = LoadingManager.stepError.bind(LoadingManager);
-    LoadingManager.stepError = function(index, error) {
-        origStepError(index, error);
-        const names = ['Three.js', 'OrbitControls', 'GLTFLoader', 'VRM Plugin', 'AI Brain', 'VRM Model', 'Avatar Ready'];
-        this.terminalLog('[ERR] ' + (names[index] || 'Step ' + index) + ': ' + error, 'error');
-    };
-    
-    LoadingManager.terminalLog('> Initializing JenaAI...', 'info');
-    
-    // Load vendor scripts first
-    loadVendorScripts().then(() => {
-        LoadingManager.terminalLog('> Vendor scripts loaded', 'ok');
-        LoadingManager.init();
-        
-        // Now load app scripts
-        const appScripts = ['js/jena-brain.js', 'js/vrm-engine.js', 'js/lip-sync.js', 'js/skill-engine.js', 'js/main.js'];
-        let loaded = 0;
-        function loadApp() {
-            if (loaded >= appScripts.length) return;
-            const s = document.createElement('script');
-            s.src = appScripts[loaded];
-            s.onload = () => { loaded++; loadApp(); };
-            s.onerror = (e) => { console.error('Failed: ' + appScripts[loaded]); loaded++; loadApp(); };
-            document.head.appendChild(s);
-        }
-        loadApp();
-    });
+    // Start loading after a tiny delay to let DOM render
+    setTimeout(loadVendor, 100);
+    </script>
     // Load CDN scripts first, then our app scripts
     ScriptLoader.loadAll().then(() => {
         console.log('All CDN scripts loaded!');

@@ -1,3 +1,8 @@
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
+
 /**
  * 🎭 VRMEngine — Jena's Avatar Control System
  * 
@@ -66,9 +71,6 @@ class VRMEngine {
     }
 
     async loadVRM(url) {
-        const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
-        const { VRMLoaderPlugin, VRMUtils } = await import('@pixiv/three-vrm');
-
         const loader = new GLTFLoader();
         loader.register((p) => new VRMLoaderPlugin(p));
 
@@ -277,4 +279,4 @@ class VRMEngine {
     }
 }
 
-window.VRMEngine = VRMEngine;
+// VRMEngine exported as ES module

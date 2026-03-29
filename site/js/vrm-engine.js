@@ -87,8 +87,15 @@ class VRMEngine {
                 this.vrm.scene.traverse(o => o.frustumCulled = false);
                 this.scene.add(this.vrm.scene);
                 
-                // Apply initial pose
+                // Face forward toward camera
+                this.vrm.scene.rotation.y = Math.PI;
+                
+                // Apply natural standing pose
                 this.setPose('standing');
+                
+                // Force immediate update
+                this.vrm.update(0);
+                
                 this.isReady = true;
                 
                 if (window.LoadingManager) { LoadingManager.stepComplete(5); LoadingManager.setStatus('Avatar ready!'); LoadingManager.stepComplete(6); LoadingManager.complete(); }

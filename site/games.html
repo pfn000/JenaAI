@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JenaAI Games 🎮</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body { background: #0a0a1a; color: white; font-family: -apple-system, sans-serif; }
+        .container { max-width: 500px; margin: 0 auto; padding: 20px; }
+        h1 { font-size: 24px; text-align: center; margin-bottom: 20px; }
+        .back { display: block; text-align: center; color: #888; margin-bottom: 16px; text-decoration: none; font-size: 13px; }
+        .game-card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 12px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .game-card:hover { border-color: #ff6b9d; transform: translateY(-2px); }
+        .game-card h3 { font-size: 16px; margin-bottom: 4px; }
+        .game-card p { font-size: 12px; color: #888; }
+        .game-card .category { font-size: 10px; color: #4ecca3; background: rgba(78,204,163,0.1); padding: 2px 8px; border-radius: 10px; display: inline-block; margin-top: 6px; }
+
+        /* Game Board - Tic Tac Toe */
+        #game-area { display: none; }
+        .board { display: grid; grid-template-columns: repeat(3, 80px); gap: 8px; justify-content: center; margin: 20px 0; }
+        .cell {
+            width: 80px; height: 80px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 32px; font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .cell:hover { background: rgba(255,255,255,0.1); }
+        .cell.x { color: #ff6b9d; }
+        .cell.o { color: #4ecca3; }
+        .game-status { text-align: center; font-size: 16px; margin: 16px 0; }
+        .game-buttons { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+        .game-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: white; padding: 10px 20px;
+            border-radius: 100px; font-size: 14px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .game-btn:hover { background: #ff6b9d; border-color: #ff6b9d; }
+        .jena-reaction { text-align: center; font-size: 18px; margin: 12px 0; min-height: 30px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back">← Back to Jena</a>
+        <h1>🎮 Play with Jena</h1>
+        
+        <!-- Game List -->
+        <div id="game-list">
+            <div id="games-container"></div>
+        </div>
+        
+        <!-- Game Area -->
+        <div id="game-area">
+            <button class="game-btn" onclick="backToGames()" style="margin-bottom:16px;">← Back to games</button>
+            <div id="game-title" class="game-status"></div>
+            <div class="jena-reaction" id="jena-reaction"></div>
+            <div id="game-board"></div>
+            <div id="game-controls" class="game-buttons"></div>
+        </div>
+    </div>
+
+    <script src="js/jena-brain.js"></script>
+    <script src="js/game-sdk.js"></script>
+    <script>
+        const sdk = new GameSDK();
+        const brain = new JenaBrain();
+        
+        // Render game list
+        function renderGames() {
+            const container = document.getElementById('games-container');
+            const games = sdk.listGames();
+            container.innerHTML = games.map(g => `
+                <div class="game-card" onclick="startGame('${g.name}')">
+                    <h3>🎮 ${g.displayName}</h3>
+                    <p>${g.description}</p>
+                    <span class="category">${g.category}</span>
+                </div>
+            `).join('');
+        }
+        
+        function startGame(name) {
+            sdk.startGame(name);
+            document.getElementById('game-list').style.display = 'none';
+            document.getElementById('game-area').style.display = 'block';
+            
+            const game = sdk.games[name];
+            document.getElementById('game-title').textContent = '🎮 ' + game.displayName;
+            document.getElementById('jena-reaction').textContent = "Let's play! ✨";
+            
+            if (name === 'tictactoe') renderTicTacToe();
+            else if (name === 'rps') renderRPS();
+            else if (name === 'guessnumber') renderGuessNumber();
+        }
+        
+        function backToGames() {
+            document.getElementById('game-list').style.display = 'block';
+            document.getElementById('game-area').style.display = 'none';
+            sdk.activeGame = null;
+        }
+        
+        // === TIC TAC TOE ===
+        function renderTicTacToe() {
+            const state = sdk.getGameState();
+            const board = document.getElementById('game-board');
+            board.innerHTML = '<div class="board">' + 
+                state.board.map((cell, i) => 
+                    `<div class="cell ${cell || ''}" onclick="placeMark(${i})">${cell || ''}</div>`
+                ).join('') + '</div>';
+            
+            const controls = document.getElementById('game-controls');
+            if (state.winner) {
+                document.getElementById('jena-reaction').textContent = 
+                    state.winner === 'draw' ? "It's a draw! 🤝" :
+                    state.winner === 'X' ? "I WIN! 😏💅" : "YOU WON?! 😤";
+                controls.innerHTML = '<button class="game-btn" onclick="startGame(\'tictactoe\')">Rematch! 🔥</button>';
+            } else {
+                controls.innerHTML = '';
+            }
+        }
+        
+        function placeMark(pos) {
+            const state = sdk.getGameState();
+            if (state.turn !== 'O' || state.board[pos] !== null || state.winner) return;
+            
+            // Player move
+            sdk.executeAction({ action: 'place', position: pos });
+            
+            // Jena's turn (AI)
+            setTimeout(() => {
+                const newState = sdk.getGameState();
+                if (!newState.winner && newState.turn === 'X') {
+                    const actions = sdk.getAvailableActions();
+                    if (actions.length > 0) {
+                        // Simple AI: random valid move
+                        const move = actions[Math.floor(Math.random() * actions.length)];
+                        sdk.executeAction(move);
+                    }
+                }
+                renderTicTacToe();
+            }, 500);
+            
+            renderTicTacToe();
+        }
+        
+        // === ROCK PAPER SCISSORS ===
+        function renderRPS() {
+            const board = document.getElementById('game-board');
+            board.innerHTML = '<div style="text-align:center;font-size:14px;color:#888;margin:20px 0;">Choose your weapon!</div>';
+            
+            const controls = document.getElementById('game-controls');
+            controls.innerHTML = ['🪨 Rock', '📄 Paper', '✂️ Scissors'].map((c, i) => 
+                `<button class="game-btn" onclick="playRPS('${['rock','paper','scissors'][i]}')">${c}</button>`
+            ).join('');
+        }
+        
+        function playRPS(choice) {
+            const result = sdk.executeAction({ action: 'choose', choice });
+            const state = result;
+            
+            document.getElementById('jena-reaction').textContent = result.jenaReaction;
+            document.getElementById('game-board').innerHTML = `
+                <div style="text-align:center;font-size:20px;margin:20px 0;">
+                    You: ${choice === 'rock' ? '🪨' : choice === 'paper' ? '📄' : '✂️'} vs 
+                    Jena: ${state.jenaChoice === 'rock' ? '🪨' : state.jenaChoice === 'paper' ? '📄' : '✂️'}
+                </div>
+                <div style="text-align:center;font-size:14px;color:#888;">
+                    Score: You ${state.playerScore} - ${state.jenaScore} Jena (${state.rounds} rounds)
+                </div>
+            `;
+        }
+        
+        // === GUESS THE NUMBER ===
+        function renderGuessNumber() {
+            sdk.games.guessnumber.state = { secret: Math.floor(Math.random() * 100) + 1, attempts: 0, won: false, lastGuess: null, hint: '' };
+            
+            document.getElementById('game-board').innerHTML = `
+                <div style="text-align:center;margin:20px 0;">
+                    <p style="font-size:14px;color:#888;margin-bottom:12px;">I'm thinking of a number between 1 and 100...</p>
+                    <input type="number" id="guess-input" min="1" max="100" placeholder="Your guess..."
+                        style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:12px;color:white;font-size:20px;width:120px;text-align:center;outline:none;"
+                        onkeydown="if(event.key==='Enter')makeGuess()">
+                    <div id="guess-result" style="margin-top:12px;font-size:16px;"></div>
+                    <div id="guess-attempts" style="margin-top:8px;font-size:12px;color:#888;"></div>
+                </div>
+            `;
+            document.getElementById('game-controls').innerHTML = '<button class="game-btn" onclick="makeGuess()">Guess!</button>';
+            document.getElementById('jena-reaction').textContent = "I've picked a number... can you guess it? 🤔";
+        }
+        
+        function makeGuess() {
+            const input = document.getElementById('guess-input');
+            const value = parseInt(input.value);
+            if (isNaN(value) || value < 1 || value > 100) return;
+            
+            const result = sdk.executeAction({ action: 'guess', value });
+            const state = result;
+            
+            document.getElementById('guess-result').textContent = state.hint;
+            document.getElementById('guess-attempts').textContent = `Attempts: ${state.attempts}`;
+            document.getElementById('jena-reaction').textContent = result.jenaReaction;
+            
+            if (state.won) {
+                document.getElementById('game-controls').innerHTML = '<button class="game-btn" onclick="renderGuessNumber()">Play Again! 🔄</button>';
+            }
+            
+            input.value = '';
+            input.focus();
+        }
+        
+        // Init
+        renderGames();
+    </script>
+</body>
+</html>

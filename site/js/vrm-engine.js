@@ -82,7 +82,7 @@ class VRMEngine {
 
     async loadVRM(url) {
         const loader = new THREE.GLTFLoader();
-        loader.register((p) => new THREE.VRMLoaderPlugin(p));
+        loader.register((p) => new THREE_VRM.VRMLoaderPlugin(p));
 
         const vrmUrl = url || './avatars/vivi.vrm';
         if (window.LoadingManager) LoadingManager.setStatus('Downloading VRM model...');

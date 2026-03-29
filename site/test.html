@@ -56,7 +56,7 @@
                 add('THREE.GLTFLoader: ' + (THREE.GLTFLoader ? 'YES' : 'NO'), THREE.GLTFLoader ? 'ok' : 'fail');
                 
                 await loadScript('vendor/three-vrm.js', 'VRM Plugin');
-                add('THREE.VRMLoaderPlugin: ' + (THREE.VRMLoaderPlugin ? 'YES' : 'NO'), THREE.VRMLoaderPlugin ? 'ok' : 'fail');
+                add('THREE_VRM.VRMLoaderPlugin: ' + (THREE_VRM.VRMLoaderPlugin ? 'YES' : 'NO'), THREE_VRM.VRMLoaderPlugin ? 'ok' : 'fail');
                 
                 // Test WebGL
                 const canvas = document.createElement('canvas');
@@ -92,7 +92,7 @@
                 controls.update();
                 
                 const loader = new THREE.GLTFLoader();
-                loader.register((p) => new THREE.VRMLoaderPlugin(p));
+                loader.register((p) => new THREE_VRM.VRMLoaderPlugin(p));
                 
                 loader.load('avatars/seed-san.vrm', (gltf) => {
                     const vrm = gltf.userData.vrm;

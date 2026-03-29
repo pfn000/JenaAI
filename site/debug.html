@@ -85,7 +85,7 @@
                     s4.src = 'https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@2/lib/three-vrm.js';
                     s4.onload = () => {
                         setStep('step-4', 'ok', '4. ✅ VRM Plugin loaded');
-                        addLog('VRM plugin loaded. THREE.VRMLoaderPlugin: ' + (typeof THREE.VRMLoaderPlugin), 'ok');
+                        addLog('VRM plugin loaded. THREE_VRM.VRMLoaderPlugin: ' + (typeof THREE_VRM.VRMLoaderPlugin), 'ok');
                         
                         // Step 5: Create renderer
                         try {
@@ -112,8 +112,8 @@
                             // Step 6: Load VRM model
                             document.getElementById('status').textContent = 'Loading VRM model...';
                             const loader = new THREE.GLTFLoader();
-                            if (THREE.VRMLoaderPlugin) {
-                                loader.register((p) => new THREE.VRMLoaderPlugin(p));
+                            if (THREE_VRM.VRMLoaderPlugin) {
+                                loader.register((p) => new THREE_VRM.VRMLoaderPlugin(p));
                                 addLog('VRM plugin registered', 'ok');
                             } else {
                                 addLog('VRM plugin NOT found on THREE!', 'err');

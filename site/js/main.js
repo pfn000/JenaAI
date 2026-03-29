@@ -10,7 +10,7 @@ if (window.LoadingManager) {
     if (typeof THREE !== 'undefined') LoadingManager.stepComplete(0);
     if (typeof THREE !== 'undefined' && THREE.OrbitControls) LoadingManager.stepComplete(1);
     if (typeof THREE !== 'undefined' && THREE.GLTFLoader) LoadingManager.stepComplete(2);
-    if (typeof THREE !== 'undefined' && THREE.VRMLoaderPlugin) LoadingManager.stepComplete(3);
+    if (typeof THREE !== 'undefined' && THREE_VRM.VRMLoaderPlugin) LoadingManager.stepComplete(3);
 }
 
 // === GLOBALS ===

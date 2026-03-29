@@ -200,7 +200,7 @@
             { url: 'vendor/three.min.js', name: 'Three.js', check: () => typeof THREE !== 'undefined' },
             { url: 'vendor/OrbitControls.js', name: 'OrbitControls', check: () => THREE && THREE.OrbitControls },
             { url: 'vendor/GLTFLoader.js', name: 'GLTFLoader', check: () => THREE && THREE.GLTFLoader },
-            { url: 'vendor/three-vrm.js', name: 'VRM Plugin', check: () => THREE && THREE.VRMLoaderPlugin },
+            { url: 'vendor/three-vrm.js', name: 'VRM Plugin', check: () => typeof THREE_VRM !== "'undefined'" && THREE_VRM.VRMLoaderPlugin },
         ];
         
         try {

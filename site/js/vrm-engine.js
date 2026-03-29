@@ -84,7 +84,7 @@ class VRMEngine {
         const loader = new GLTFLoader();
         loader.register((p) => new THREE.VRMLoaderPlugin(p));
 
-        const vrmUrl = url || './avatars/seed-san.vrm';
+        const vrmUrl = url || './avatars/vivi.vrm';
         if (window.LoadingManager) LoadingManager.setStatus('Downloading VRM model...');
         
         return new Promise((resolve, reject) => {

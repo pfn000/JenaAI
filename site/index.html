@@ -275,10 +275,15 @@
         document.getElementById('page-' + id)?.classList.add('active');
         if (id === 'call') {
             startTimer();
-            // Init avatar NOW (when viewer is visible and has dimensions)
+            // Init avatar with delay so viewer has dimensions
             if (!window.avatar && typeof VRMEngine !== 'undefined') {
                 document.getElementById('status').textContent = 'Loading avatar...';
-                window.avatar = new VRMEngine('viewer');
+                // Wait for layout to settle
+                setTimeout(() => {
+                    const viewer = document.getElementById('viewer');
+                    console.log('Viewer dimensions:', viewer.clientWidth, 'x', viewer.clientHeight);
+                    window.avatar = new VRMEngine('viewer');
+                }, 200);
             }
         }
     }

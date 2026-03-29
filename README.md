@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/jena-logo.jpg" alt="JenaAI Logo" width="300"></p>
+
 # 🤖✨ JenaAI — Autonomous AI VTuber
 
 > *She's not a chatbot. She's becoming someone.*

@@ -27,14 +27,18 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
       
-      - name: Copy site files to root
+      - name: Prepare files
         run: |
-          # Copy all site files to root for GitHub Pages
-          cp -r site/* . 2>/dev/null || true
-          # Ensure avatars and models are accessible
-          mkdir -p assets/avatars assets/models
-          cp avatars/*.vrm assets/avatars/ 2>/dev/null || true
-          cp avatars/*.jpg assets/avatars/ 2>/dev/null || true
+          # Copy site files to root
+          cp -r site/* .
+          # Make sure avatars directory exists at root
+          mkdir -p avatars
+          # Copy VRM models from repo avatars/ to root avatars/
+          cp ../avatars/*.vrm avatars/ 2>/dev/null || true
+          cp ../avatars/*.jpg avatars/ 2>/dev/null || true
+          cp ../avatars/*.png avatars/ 2>/dev/null || true
+          # Also copy from repo root avatars
+          ls -la
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

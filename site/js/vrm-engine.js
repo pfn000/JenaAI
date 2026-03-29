@@ -72,7 +72,7 @@ class VRMEngine {
         const loader = new GLTFLoader();
         loader.register((p) => new VRMLoaderPlugin(p));
 
-        const vrmUrl = url || './assets/avatars/vivi.vrm';
+        const vrmUrl = url || './avatars/vivi.vrm';
         
         return new Promise((resolve, reject) => {
             loader.load(vrmUrl, (gltf) => {

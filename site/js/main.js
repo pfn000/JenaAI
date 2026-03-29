@@ -1,7 +1,3 @@
-import { JenaBrain } from './jena-brain.js';
-import { VRMEngine } from './vrm-engine.js';
-import { LipSyncEngine } from './lip-sync.js';
-import { SkillEngine } from './skill-engine.js';
 
 /**
  * ✨ JenaAI Main Controller

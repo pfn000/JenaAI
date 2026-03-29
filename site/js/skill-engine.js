@@ -281,4 +281,4 @@ return "I can see my own skills! I know " + skills.list().length + " things.";`,
     }
 }
 
-export { SkillEngine };
+window.SkillEngine = SkillEngine;

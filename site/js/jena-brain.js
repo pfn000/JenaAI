@@ -248,4 +248,4 @@ class JenaBrain {
 }
 
 // Export
-export { JenaBrain };
+window.JenaBrain = JenaBrain;

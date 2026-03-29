@@ -1,7 +1,3 @@
-import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
 
 /**
  * 🎭 VRMEngine — Jena's Avatar Control System
@@ -72,16 +68,16 @@ class VRMEngine {
 
     async loadVRM(url) {
         const loader = new GLTFLoader();
-        loader.register((p) => new VRMLoaderPlugin(p));
+        loader.register((p) => new THREE.VRMLoaderPlugin(p));
 
         const vrmUrl = url || './avatars/vivi.vrm';
         
         return new Promise((resolve, reject) => {
             loader.load(vrmUrl, (gltf) => {
                 this.vrm = gltf.userData.vrm;
-                VRMUtils.removeUnnecessaryVertices(gltf.scene);
-                VRMUtils.combineSkeletons(gltf.scene);
-                VRMUtils.combineMorphs(this.vrm);
+                // VRMUtils.removeUnnecessaryVertices - v2 API
+                // VRMUtils.combineSkeletons - v2 API
+                // VRMUtils.combineMorphs - v2 API
                 this.vrm.scene.traverse(o => o.frustumCulled = false);
                 this.scene.add(this.vrm.scene);
                 

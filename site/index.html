@@ -11,15 +11,13 @@
     <!-- Telegram Web App SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
-            "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3/lib/three-vrm.module.js"
-        }
-    }
-    </script>
+    <!-- Three.js (non-module, global THREE) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
+    
+    <!-- VRM Plugin (UMD build, adds to THREE) -->
+    <script src="https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@2/lib/three-vrm.js"></script>
 </head>
 <body>
     <!-- LANDING PAGE -->
@@ -151,10 +149,10 @@
     </div>
 
     <!-- SCRIPTS -->
-    <script type="module" src="js/jena-brain.js"></script>
-    <script type="module" src="js/skill-engine.js"></script>
-    <script type="module" src="js/vrm-engine.js"></script>
-    <script type="module" src="js/lip-sync.js"></script>
-    <script type="module" src="js/main.js"></script>
+    <script src="js/jena-brain.js"></script>
+    <script src="js/skill-engine.js"></script>
+    <script src="js/vrm-engine.js"></script>
+    <script src="js/lip-sync.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>

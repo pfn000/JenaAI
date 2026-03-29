@@ -173,4 +173,4 @@ class LipSyncEngine {
     }
 }
 
-// LipSyncEngine exported as ES module
+window.LipSyncEngine = LipSyncEngine;

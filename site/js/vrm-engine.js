@@ -74,7 +74,7 @@ class VRMEngine {
         const loader = new GLTFLoader();
         loader.register((p) => new THREE.VRMLoaderPlugin(p));
 
-        const vrmUrl = url || './avatars/vivi.vrm';
+        const vrmUrl = url || './avatars/seed-san.vrm';
         if (window.LoadingManager) LoadingManager.setStatus('Downloading VRM model...');
         
         return new Promise((resolve, reject) => {
@@ -103,8 +103,16 @@ class VRMEngine {
                 resolve(this.vrm);
             }, (progress) => {
                 const pct = 100 * (progress.loaded / progress.total);
-                document.getElementById('mic-status').textContent = 'Loading... ' + pct.toFixed(0) + '%';
-                if (window.LoadingManager) { LoadingManager.setStatus('Downloading VRM... ' + pct.toFixed(0) + '%'); }
+                const loadedMB = (progress.loaded / 1048576).toFixed(1);
+                const totalMB = (progress.total / 1048576).toFixed(1);
+                const status = 'Downloading VRM... ' + pct.toFixed(0) + '% (' + loadedMB + '/' + totalMB + ' MB)';
+                document.getElementById('mic-status').textContent = status;
+                if (window.LoadingManager) { 
+                    LoadingManager.setStatus(status);
+                    // Update detail text
+                    const detail = document.getElementById('load-detail');
+                    if (detail) detail.textContent = loadedMB + ' MB of ' + totalMB + ' MB downloaded...';
+                }
             }, (error) => {
                 if (window.LoadingManager) LoadingManager.stepError(5, error.message);
                 reject(error);

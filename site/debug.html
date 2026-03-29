@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JenaAI Debug</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a1a; color: white; font-family: -apple-system, sans-serif; padding: 20px; }
+        h1 { font-size: 24px; margin-bottom: 20px; }
+        .step { padding: 10px; margin: 5px 0; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 13px; }
+        .step.ok { border-left: 3px solid #4ecca3; }
+        .step.fail { border-left: 3px solid #e94560; }
+        .step.pending { border-left: 3px solid #ffa500; }
+        #viewer { width: 100%; height: 400px; background: #1a1a2e; border-radius: 12px; margin: 20px 0; position: relative; }
+        #viewer canvas { width: 100% !important; height: 100% !important; }
+        #status { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 8px 12px; border-radius: 8px; font-size: 12px; }
+        .log { background: #111; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 11px; max-height: 200px; overflow-y: auto; margin: 10px 0; }
+        .log div { margin: 2px 0; }
+        .log .err { color: #e94560; }
+        .log .ok { color: #4ecca3; }
+        .log .info { color: #888; }
+    </style>
+</head>
+<body>
+    <h1>🔍 JenaAI Debug</h1>
+    
+    <div id="steps">
+        <div class="step pending" id="step-1">1. Loading Three.js...</div>
+        <div class="step pending" id="step-2">2. Loading OrbitControls...</div>
+        <div class="step pending" id="step-3">3. Loading GLTFLoader...</div>
+        <div class="step pending" id="step-4">4. Loading VRM Plugin...</div>
+        <div class="step pending" id="step-5">5. Creating renderer...</div>
+        <div class="step pending" id="step-6">6. Loading VRM model...</div>
+        <div class="step pending" id="step-7">7. Rendering avatar...</div>
+    </div>
+    
+    <div id="viewer">
+        <div id="status">Waiting...</div>
+    </div>
+    
+    <div class="log" id="log"></div>
+    
+    <script>
+        const log = document.getElementById('log');
+        function addLog(text, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = new Date().toLocaleTimeString() + ' ' + text;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function setStep(id, status, text) {
+            const el = document.getElementById(id);
+            el.className = 'step ' + status;
+            if (text) el.textContent = text;
+        }
+        
+        addLog('Starting debug...', 'info');
+        
+        // Step 1: Load Three.js
+        const s1 = document.createElement('script');
+        s1.src = 'https://cdn.jsdelivr.net/npm/three@0.140.0/build/three.min.js';
+        s1.onload = () => {
+            setStep('step-1', 'ok', '1. ✅ Three.js loaded (v' + THREE.REVISION + ')');
+            addLog('Three.js loaded, revision: ' + THREE.REVISION, 'ok');
+            
+            // Step 2: Load OrbitControls
+            const s2 = document.createElement('script');
+            s2.src = 'https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/controls/OrbitControls.js';
+            s2.onload = () => {
+                setStep('step-2', 'ok', '2. ✅ OrbitControls loaded');
+                addLog('OrbitControls loaded', 'ok');
+                
+                // Step 3: Load GLTFLoader
+                const s3 = document.createElement('script');
+                s3.src = 'https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/loaders/GLTFLoader.js';
+                s3.onload = () => {
+                    setStep('step-3', 'ok', '3. ✅ GLTFLoader loaded');
+                    addLog('GLTFLoader loaded', 'ok');
+                    
+                    // Step 4: Load VRM
+                    const s4 = document.createElement('script');
+                    s4.src = 'https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@2/lib/three-vrm.js';
+                    s4.onload = () => {
+                        setStep('step-4', 'ok', '4. ✅ VRM Plugin loaded');
+                        addLog('VRM plugin loaded. THREE.VRMLoaderPlugin: ' + (typeof THREE.VRMLoaderPlugin), 'ok');
+                        
+                        // Step 5: Create renderer
+                        try {
+                            const container = document.getElementById('viewer');
+                            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                            renderer.outputColorSpace = THREE.sRGBEncoding;
+                            container.insertBefore(renderer.domElement, container.firstChild);
+                            
+                            const w = container.clientWidth, h = container.clientHeight;
+                            renderer.setSize(w, h);
+                            
+                            const camera = new THREE.PerspectiveCamera(30, w/h, 0.1, 20);
+                            camera.position.set(0, 1.0, 3.5);
+                            
+                            const scene = new THREE.Scene();
+                            scene.add(new THREE.DirectionalLight(0xffffff, 1.5).translateX(1).translateY(2).translateZ(1));
+                            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+                            
+                            setStep('step-5', 'ok', '5. ✅ Renderer created (' + w + 'x' + h + ')');
+                            addLog('Renderer created: ' + w + 'x' + h, 'ok');
+                            
+                            // Step 6: Load VRM model
+                            document.getElementById('status').textContent = 'Loading VRM model...';
+                            const loader = new THREE.GLTFLoader();
+                            if (THREE.VRMLoaderPlugin) {
+                                loader.register((p) => new THREE.VRMLoaderPlugin(p));
+                                addLog('VRM plugin registered', 'ok');
+                            } else {
+                                addLog('VRM plugin NOT found on THREE!', 'err');
+                            }
+                            
+                            const vrmUrl = './avatars/vivi.vrm';
+                            addLog('Loading VRM from: ' + vrmUrl, 'info');
+                            
+                            loader.load(
+                                vrmUrl,
+                                (gltf) => {
+                                    addLog('GLTF loaded! userData keys: ' + Object.keys(gltf.userData).join(', '), 'ok');
+                                    const vrm = gltf.userData.vrm;
+                                    if (vrm) {
+                                        addLog('VRM found! Meta: ' + JSON.stringify(vrm.meta?.meta?.title || 'unknown'), 'ok');
+                                        scene.add(vrm.scene);
+                                        setStep('step-6', 'ok', '6. ✅ VRM model loaded');
+                                        
+                                        // Step 7: Render
+                                        function animate() {
+                                            requestAnimationFrame(animate);
+                                            renderer.render(scene, camera);
+                                        }
+                                        animate();
+                                        setStep('step-7', 'ok', '7. ✅ RENDERING!');
+                                        document.getElementById('status').textContent = '✅ Jena is LIVE!';
+                                        addLog('AVATAR RENDERING!', 'ok');
+                                    } else {
+                                        addLog('NO VRM in userData!', 'err');
+                                        setStep('step-6', 'fail', '6. ❌ No VRM in gltf');
+                                    }
+                                },
+                                (progress) => {
+                                    const pct = (100 * progress.loaded / progress.total).toFixed(0);
+                                    document.getElementById('status').textContent = 'Loading... ' + pct + '%';
+                                    addLog('Loading: ' + pct + '% (' + progress.loaded + '/' + progress.total + ')', 'info');
+                                },
+                                (error) => {
+                                    addLog('VRM LOAD ERROR: ' + error.message, 'err');
+                                    setStep('step-6', 'fail', '6. ❌ Load error: ' + error.message);
+                                    document.getElementById('status').textContent = '❌ Error: ' + error.message;
+                                }
+                            );
+                            
+                        } catch(e) {
+                            addLog('Renderer error: ' + e.message, 'err');
+                            setStep('step-5', 'fail', '5. ❌ ' + e.message);
+                        }
+                    };
+                    s4.onerror = () => {
+                        setStep('step-4', 'fail', '4. ❌ VRM Plugin FAILED to load');
+                        addLog('VRM plugin failed to load!', 'err');
+                    };
+                    document.head.appendChild(s4);
+                };
+                s3.onerror = () => {
+                    setStep('step-3', 'fail', '3. ❌ GLTFLoader FAILED to load');
+                    addLog('GLTFLoader failed to load!', 'err');
+                };
+                document.head.appendChild(s3);
+            };
+            s2.onerror = () => {
+                setStep('step-2', 'fail', '2. ❌ OrbitControls FAILED to load');
+                addLog('OrbitControls failed to load!', 'err');
+            };
+            document.head.appendChild(s2);
+        };
+        s1.onerror = () => {
+            setStep('step-1', 'fail', '1. ❌ Three.js FAILED to load');
+            addLog('Three.js failed to load!', 'err');
+        };
+        document.head.appendChild(s1);
+    </script>
+</body>
+</html>
